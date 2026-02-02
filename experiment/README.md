@@ -17,7 +17,7 @@ That's it. All dependencies (including PyTorch) are managed by `uv` via `pyproje
 ## Quick Start
 
 ```bash
-PYTHONPATH=. uv run python experiment/run_analysis.py /path/to/your/osz/files/
+uv run python experiment/run_analysis.py /path/to/your/osz/files/
 ```
 
 Point it at a directory containing `.osz` beatmap archives. For meaningful results, your dataset should include songs that have been mapped by multiple different people (the script automatically identifies these by matching Title/Artist metadata across .osz files).
@@ -51,7 +51,7 @@ The bundled checkpoint (`experiment/checkpoints/epoch=3-step=58000.ckpt`) was tr
 
 - **Architecture:** osu-dreamer's VAE (latent model) -- WaveNet encoder/decoder, 32-dim latent
 - **Training data:** 850 mapsets (single timing point subset), all difficulties
-- **Training:** 58,000 steps (~4 epochs), batch size 4, lr 1e-4
+- **Training:** 58,000 steps (~4 epochs), batch size 8, lr 0.002
 - **Hardware:** Apple M1 Pro (MPS backend)
 - **Config:** See `experiment/config/latent_model.yml`
 

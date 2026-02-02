@@ -5,7 +5,7 @@ Runs the complete analysis on a user-provided folder of .osz beatmap files.
 Combines the logic from scripts 01-08 into a single self-contained pipeline.
 
 Usage:
-    PYTHONPATH=. python experiment/run_analysis.py /path/to/osz/folder/
+    uv run python experiment/run_analysis.py /path/to/osz/folder/
 
 Pipeline:
     1. Scan .osz files, extract, build multi-mapper index
@@ -39,6 +39,7 @@ warnings.filterwarnings("ignore")
 # Paths (relative to repo root, auto-detected)
 # ---------------------------------------------------------------------------
 REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO_ROOT))
 CHECKPOINT_PATH = REPO_ROOT / "experiment" / "checkpoints" / "epoch=3-step=58000.ckpt"
 
 # Output directory (all generated artefacts go here)
@@ -834,12 +835,18 @@ def step7_synthesis(track_a_output: dict, track_b_output: dict | None, manifest_
         try:
             enc_9 = np.load(enc_9dim_dir / entry["filename"])
             enc_z = np.load(enc_latent_dir / entry["filename"])
-            L = enc_9.shape[1]
-            z_up = np.repeat(enc_z, 18, axis=1)[:, :L]
+            Lz = enc_z.shape[1]
+            # Downsample 9-dim to latent resolution (average 18-frame blocks)
+            enc_9_ds = np.zeros((len(DIM_NAMES), Lz))
+            for di in range(len(DIM_NAMES)):
+                for t in range(Lz):
+                    start = t * 18
+                    end = min(start + 18, enc_9.shape[1])
+                    enc_9_ds[di, t] = enc_9[di, start:end].mean()
             for zi in range(N_LATENT):
                 for di in range(len(DIM_NAMES)):
-                    z_sig = z_up[zi]
-                    d_sig = enc_9[di]
+                    z_sig = enc_z[zi]
+                    d_sig = enc_9_ds[di]
                     if np.std(z_sig) > 0 and np.std(d_sig) > 0 and len(z_sig) >= 2:
                         r = np.corrcoef(z_sig, d_sig)[0, 1]
                         if not np.isnan(r):
