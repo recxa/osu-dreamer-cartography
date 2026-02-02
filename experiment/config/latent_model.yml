@@ -1,0 +1,88 @@
+# VAE Latent Model Training Config — Latent Cartography Experiment
+# Adapted from osu-dreamer/osu_dreamer/latent_model/model.yml
+# for Apple Silicon (Mac Studio) training
+
+seed_everything: true
+trainer:
+    # MPS on Apple Silicon (requires platform.processor patch — see launch command)
+    accelerator: 'mps'
+
+    max_epochs: -1
+    devices: 1
+
+    # MPS doesn't support mixed precision — use 32-bit
+    precision: '32-true'
+
+    enable_checkpointing: true
+    callbacks:
+        - class_path: pytorch_lightning.callbacks.ModelCheckpoint
+          init_args:
+              monitor: val/l2_rec
+              mode: min
+              save_top_k: 1
+        - class_path: pytorch_lightning.callbacks.LearningRateMonitor
+
+    logger:
+        class_path: pytorch_lightning.loggers.TensorBoardLogger
+        init_args:
+            save_dir: /Users/red/Downloads/rcx26/OSUxMIR/experiments/latent-cartography/runs
+            name: latent
+
+    enable_progress_bar: true
+    log_every_n_steps: 1
+    enable_model_summary: true
+
+    val_check_interval: 1000
+    check_val_every_n_epoch: null
+
+data:
+    # Preprocessed data from generate-data
+    data_path: /Users/red/Downloads/rcx26/OSUxMIR/experiments/latent-cartography/data/osu-dreamer-preprocessed
+
+    # ~6.1 seconds per training subsequence
+    seq_len: 1024
+
+    # Reduce batch size for MPS memory constraints
+    batch_size: 8
+
+    # Fewer workers on macOS
+    num_workers: 4
+
+    # Hold out for validation
+    val_size: 64
+
+model:
+    # Training parameters
+    opt_args:
+        lr: .002
+        weight_decay: 0.
+    lr_schedule_args:
+        warmup_steps: 500
+        warmup_init: 0.01
+    grad_accum_steps: 2  # Compensate for smaller batch size
+    critic_steps_per_gen: 1
+    gp_factor: 10.
+    gan_factor: 5e-3
+    fm_factor: 1.
+    pixel_factor: 0.
+    kl_factor: .0001
+
+    # Architecture — same as default
+    emb_dim: 32
+    h_dim: 360
+    audio_h_dim: 32
+    ae_args:
+        strides: [2, 3, 3]
+        layer_args:
+            num_stacks: 1
+            stack_depth: 4
+
+    critic_args:
+        spec_features: 32
+        scales: 3
+        convs:
+            - [  16, 3, 1,  1]
+            - [  64, 5, 3,  4]
+            - [ 256, 5, 3, 16]
+            - [1024, 5, 2, 64]
+            - [ 512, 3, 1,  1]
