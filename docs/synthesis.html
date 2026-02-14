@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Part C: Synthesis – Latent Cartography</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/heatmap.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Part C: Synthesis</h1>
+            <p class="subtitle">32×9 Latent-Interpretable Correlation Matrix</p>
+            <a href="index.html" class="back-link">← Back to overview</a>
+        </header>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="ordering">Dimension ordering:</label>
+                <select id="ordering">
+                    <option value="ranked">Ranked by cross-mapper agreement</option>
+                    <option value="sequential">Sequential (z_0 → z_31)</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="threshold">Correlation threshold:</label>
+                <input type="range" id="threshold" min="0" max="1" step="0.05" value="0">
+                <span id="threshold-value">|r| > 0.00</span>
+            </div>
+
+            <div class="control-group">
+                <label>
+                    <input type="checkbox" id="show-values">
+                    Show correlation values
+                </label>
+            </div>
+        </div>
+
+        <div id="heatmap-container"></div>
+
+        <div class="info-panel">
+            <h3>Selected Cell</h3>
+            <div id="cell-info">
+                <p>Click a cell to see details</p>
+            </div>
+        </div>
+
+        <div class="stats-panel">
+            <h3>Matrix Statistics</h3>
+            <div id="matrix-stats"></div>
+        </div>
+
+        <footer>
+            <p>Interactive heatmap • Click cells to explore correlations</p>
+        </footer>
+    </div>
+
+    <div class="tooltip"></div>
+
+    <script src="js/heatmap.js"></script>
+</body>
+</html>

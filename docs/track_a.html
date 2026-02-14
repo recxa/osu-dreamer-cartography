@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Part A: Interpretable Dimensions – Latent Cartography</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Part A: Interpretable Dimensions</h1>
+            <p class="subtitle">Cross-mapper agreement on 9-dim beatmap encoding</p>
+            <a href="index.html" class="back-link" style="display:inline-block;margin-top:1rem;color:#2563eb;text-decoration:none;">← Back to overview</a>
+        </header>
+
+        <section style="background:#fff;border-radius:12px;padding:1.5rem;margin-bottom:2rem;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+            <h2 style="margin-bottom:1rem;">Overview</h2>
+            <p style="color:#64748b;margin-bottom:1rem;">
+                osu-dreamer's built-in encoding converts beatmaps to a 9-dimensional time series at ~6ms frame resolution.
+                We compared same-song-different-mapper beatmaps across <span id="num-pairs">—</span> cross-mapper pairs
+                from <span id="num-songs">—</span> songs, computing per-dimension Pearson correlation.
+            </p>
+            <p style="color:#64748b;">
+                <strong style="color:#1e293b;">Key finding:</strong> Timing dimensions (ONSET, COMBO) show high cross-mapper agreement
+                (r=0.58, r=0.44), while spatial dimensions (X, Y) show near-zero agreement (r≈0.008).
+                This suggests timing is perceptually constrained while spatial placement is stylistically free.
+            </p>
+        </section>
+
+        <div id="chart-container" style="background:#fff;border-radius:12px;padding:2rem;margin-bottom:2rem;box-shadow:0 1px 3px rgba(0,0,0,0.05);"></div>
+
+        <section style="background:#fff;border-radius:12px;padding:1.5rem;margin-bottom:2rem;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+            <h2 style="margin-bottom:1rem;">Dimension Details</h2>
+            <div id="dim-details" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1rem;"></div>
+        </section>
+
+        <footer style="text-align:center;margin-top:2rem;padding-top:2rem;border-top:1px solid #e2e8f0;color:#64748b;font-size:0.875rem;">
+            <p>Part A: Interpretable Dimensions Analysis</p>
+        </footer>
+    </div>
+
+    <script>
+        d3.json('data/track_a.json').then(data => {
+            document.getElementById('num-pairs').textContent = data.pairs_compared;
+            document.getElementById('num-songs').textContent = data.songs_analyzed;
+
+            // Bar chart — Track A uses "summary" not "dim_summary"
+            const dims = Object.entries(data.summary).map(([name, stats]) => ({
+                name,
+                mean: stats.pearson_mean,
+                std: stats.pearson_std
+            }));
+
+            const container = d3.select('#chart-container');
+            const margin = { top: 40, right: 40, bottom: 60, left: 80 };
+            const width = 800 - margin.left - margin.right;
+            const height = 400 - margin.top - margin.bottom;
+
+            const svg = container.append('svg')
+                .attr('width', width + margin.left + margin.right)
+                .attr('height', height + margin.top + margin.bottom)
+                .append('g')
+                .attr('transform', `translate(${margin.left},${margin.top})`);
+
+            const x = d3.scaleBand()
+                .domain(dims.map(d => d.name))
+                .range([0, width])
+                .padding(0.3);
+
+            const y = d3.scaleLinear()
+                .domain([0, d3.max(dims, d => d.mean + d.std)])
+                .nice()
+                .range([height, 0]);
+
+            svg.selectAll('.bar')
+                .data(dims)
+                .join('rect')
+                .attr('class', 'bar')
+                .attr('x', d => x(d.name))
+                .attr('y', d => y(d.mean))
+                .attr('width', x.bandwidth())
+                .attr('height', d => height - y(d.mean))
+                .attr('fill', '#2563eb');
+
+            svg.append('g')
+                .attr('transform', `translate(0,${height})`)
+                .call(d3.axisBottom(x))
+                .selectAll('text')
+                .style('font-size', '13px');
+
+            svg.append('g')
+                .call(d3.axisLeft(y).ticks(6))
+                .selectAll('text')
+                .style('font-size', '12px');
+
+            svg.append('text')
+                .attr('transform', 'rotate(-90)')
+                .attr('y', -60)
+                .attr('x', -height/2)
+                .attr('text-anchor', 'middle')
+                .style('font-size', '14px')
+                .style('fill', '#64748b')
+                .text('Mean Pearson r (cross-mapper agreement)');
+
+            // Dimension details
+            const detailsContainer = d3.select('#dim-details');
+            dims.forEach(d => {
+                detailsContainer.append('div')
+                    .style('padding', '1rem')
+                    .style('background', '#f8fafc')
+                    .style('border-radius', '8px')
+                    .html(`
+                        <div style="font-weight:600;font-size:1.125rem;margin-bottom:0.5rem;">${d.name}</div>
+                        <div style="color:#64748b;font-size:0.875rem;">Mean r: <strong style="color:#1e293b;">${d.mean.toFixed(3)}</strong></div>
+                        <div style="color:#64748b;font-size:0.875rem;">Std: ${d.std.toFixed(3)}</div>
+                        <div style="color:#64748b;font-size:0.875rem;">Pairs: ${data.summary[d.name].n_pairs}</div>
+                    `);
+            });
+        });
+    </script>
+</body>
+</html>

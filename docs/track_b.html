@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Part B: Latent Dimensions – Latent Cartography</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Part B: Latent Dimensions</h1>
+            <p class="subtitle">Cross-mapper agreement in 32-dim VAE latent space</p>
+            <a href="index.html" class="back-link" style="display:inline-block;margin-top:1rem;color:#2563eb;text-decoration:none;">← Back to overview</a>
+        </header>
+
+        <section style="background:#fff;border-radius:12px;padding:1.5rem;margin-bottom:2rem;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+            <h2 style="margin-bottom:1rem;">Overview</h2>
+            <p style="color:#64748b;margin-bottom:1rem;">
+                Same cross-mapper comparison as Part A, but using the 32-dimensional latent representation from
+                osu-dreamer's VAE encoder. The encoder compresses 9-dim → 32-dim while downsampling time by 18×.
+            </p>
+            <p style="color:#64748b;">
+                <strong style="color:#1e293b;">Key finding:</strong> 8/32 dimensions show r>0.3 (perceptual),
+                0/32 show r<0.1 (stylistic). Top dimension z_21 achieves r=0.451. Full 32-dim cosine similarity
+                is 0.774 ± 0.039, compared to 0.603 in raw 9-dim space.
+            </p>
+        </section>
+
+        <div id="ranking-chart" style="background:#fff;border-radius:12px;padding:2rem;margin-bottom:2rem;box-shadow:0 1px 3px rgba(0,0,0,0.05);"></div>
+
+        <section style="background:#fff;border-radius:12px;padding:1.5rem;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+            <h2 style="margin-bottom:1rem;">Top 10 Dimensions</h2>
+            <div id="top-dims" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1rem;"></div>
+        </section>
+
+        <footer style="text-align:center;margin-top:2rem;padding-top:2rem;border-top:1px solid #e2e8f0;color:#64748b;font-size:0.875rem;">
+            <p>Part B: Latent Dimensions Analysis</p>
+        </footer>
+    </div>
+
+    <script>
+        d3.json('data/track_b.json').then(data => {
+            // Ranking chart (all 32 dims)
+            const dims = data.dim_ranking.map(d => ({
+                dim: d.dim,
+                mean: d.pearson_mean
+            }));
+
+            const container = d3.select('#ranking-chart');
+            const margin = { top: 40, right: 40, bottom: 60, left: 60 };
+            const width = Math.min(1000, window.innerWidth - 100) - margin.left - margin.right;
+            const height = 500 - margin.top - margin.bottom;
+
+            const svg = container.append('svg')
+                .attr('width', width + margin.left + margin.right)
+                .attr('height', height + margin.top + margin.bottom)
+                .append('g')
+                .attr('transform', `translate(${margin.left},${margin.top})`);
+
+            const x = d3.scaleBand()
+                .domain(dims.map((d, i) => i))
+                .range([0, width])
+                .padding(0.1);
+
+            const y = d3.scaleLinear()
+                .domain([0, d3.max(dims, d => d.mean)])
+                .nice()
+                .range([height, 0]);
+
+            svg.selectAll('.bar')
+                .data(dims)
+                .join('rect')
+                .attr('class', 'bar')
+                .attr('x', (d, i) => x(i))
+                .attr('y', d => y(d.mean))
+                .attr('width', x.bandwidth())
+                .attr('height', d => height - y(d.mean))
+                .attr('fill', d => d.mean > 0.3 ? '#2563eb' : '#94a3b8');
+
+            svg.append('g')
+                .attr('transform', `translate(0,${height})`)
+                .call(d3.axisBottom(x).tickValues(d3.range(0, 32, 4)).tickFormat(i => `z_${dims[i].dim}`))
+                .selectAll('text')
+                .style('font-size', '11px');
+
+            svg.append('g')
+                .call(d3.axisLeft(y).ticks(6))
+                .selectAll('text')
+                .style('font-size', '12px');
+
+            svg.append('text')
+                .attr('transform', 'rotate(-90)')
+                .attr('y', -50)
+                .attr('x', -height/2)
+                .attr('text-anchor', 'middle')
+                .style('font-size', '14px')
+                .style('fill', '#64748b')
+                .text('Mean Pearson r (cross-mapper agreement)');
+
+            svg.append('text')
+                .attr('x', width/2)
+                .attr('y', -10)
+                .attr('text-anchor', 'middle')
+                .style('font-size', '16px')
+                .style('font-weight', '600')
+                .text('All 32 Latent Dimensions (ranked by agreement)');
+
+            // Top 10 details
+            const topContainer = d3.select('#top-dims');
+            data.dim_ranking.slice(0, 10).forEach((d, i) => {
+                topContainer.append('div')
+                    .style('padding', '1rem')
+                    .style('background', i < 8 ? '#eff6ff' : '#f8fafc')
+                    .style('border-radius', '8px')
+                    .style('border', i < 8 ? '1px solid #3b82f6' : '1px solid #e2e8f0')
+                    .html(`
+                        <div style="font-weight:600;font-size:1.125rem;margin-bottom:0.5rem;">
+                            #${i+1}: z_${d.dim}
+                            ${i < 8 ? '<span style="color:#2563eb;font-size:0.875rem;margin-left:0.5rem;">PERCEPTUAL</span>' : ''}
+                        </div>
+                        <div style="color:#64748b;font-size:0.875rem;">Mean r: <strong style="color:#1e293b;">${d.pearson_mean.toFixed(3)}</strong></div>
+                        <div style="color:#64748b;font-size:0.875rem;">Std: ${d.pearson_std.toFixed(3)}</div>
+                        <div style="color:#64748b;font-size:0.875rem;">Pairs: ${d.n_pairs}</div>
+                    `);
+            });
+        });
+    </script>
+</body>
+</html>

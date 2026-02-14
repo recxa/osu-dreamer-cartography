@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Latent Space Cartography – Results</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Latent Space Cartography</h1>
+            <p class="subtitle">Exploring perceptual vs. stylistic dimensions in osu! beatmap generation</p>
+        </header>
+
+        <main>
+            <section class="experiment-card" id="part-a">
+                <div class="card-header">
+                    <h2>Part A: Interpretable Dimensions</h2>
+                    <span class="status status-complete">✓ Complete</span>
+                </div>
+                <div class="card-content">
+                    <p class="description">
+                        Cross-mapper agreement analysis on 9-dim beatmap encoding (ONSET, COMBO, SLIDE, SUSTAIN, WHISTLE, FINISH, CLAP, X, Y).
+                        <strong>Key finding:</strong> timing dimensions show high agreement (ONSET r=0.58), spatial dimensions show near-zero (X/Y r≈0.008).
+                    </p>
+                    <div id="track-a-preview" class="preview-chart"></div>
+                    <div class="card-stats">
+                        <div class="stat">
+                            <span class="stat-value" id="track-a-songs">—</span>
+                            <span class="stat-label">Songs</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value" id="track-a-pairs">—</span>
+                            <span class="stat-label">Cross-mapper pairs</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value" id="track-a-cosine">—</span>
+                            <span class="stat-label">Full cosine similarity</span>
+                        </div>
+                    </div>
+                    <a href="track_a.html" class="explore-link">Explore details →</a>
+                </div>
+            </section>
+
+            <section class="experiment-card" id="part-b">
+                <div class="card-header">
+                    <h2>Part B: Latent Dimensions</h2>
+                    <span class="status status-complete">✓ Complete</span>
+                </div>
+                <div class="card-content">
+                    <p class="description">
+                        Cross-mapper agreement in 32-dim VAE latent space.
+                        <strong>Key finding:</strong> 8/32 dimensions classified as perceptual (r>0.3), latent space preserves timing structure.
+                    </p>
+                    <div id="track-b-preview" class="preview-chart"></div>
+                    <div class="card-stats">
+                        <div class="stat">
+                            <span class="stat-value" id="track-b-songs">—</span>
+                            <span class="stat-label">Songs</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value" id="track-b-pairs">—</span>
+                            <span class="stat-label">Cross-mapper pairs</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value" id="track-b-cosine">—</span>
+                            <span class="stat-label">Full cosine similarity</span>
+                        </div>
+                    </div>
+                    <a href="track_b.html" class="explore-link">Explore details →</a>
+                </div>
+            </section>
+
+            <section class="experiment-card" id="part-c">
+                <div class="card-header">
+                    <h2>Part C: Synthesis (32×9 Correlation)</h2>
+                    <span class="status status-complete">✓ Complete</span>
+                </div>
+                <div class="card-content">
+                    <p class="description">
+                        Correlation matrix mapping 32 latent dimensions to 9 interpretable dimensions.
+                        <strong>Key finding:</strong> perceptual latent dims encode timing (ONSET+COMBO), lowest dims encode spatial (X).
+                    </p>
+                    <div id="synthesis-preview" class="preview-chart"></div>
+                    <div class="card-stats">
+                        <div class="stat">
+                            <span class="stat-value" id="synthesis-beatmaps">—</span>
+                            <span class="stat-label">Beatmaps analyzed</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value">32×9</span>
+                            <span class="stat-label">Matrix size</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value" id="synthesis-mean-r">—</span>
+                            <span class="stat-label">Mean |r|</span>
+                        </div>
+                    </div>
+                    <a href="synthesis.html" class="explore-link">Explore heatmap →</a>
+                </div>
+            </section>
+
+            <section class="experiment-card" id="part-d">
+                <div class="card-header">
+                    <h2>Part D: Cross-Validation</h2>
+                    <span class="status status-complete">✓ Generalization confirmed</span>
+                </div>
+                <div class="card-content">
+                    <p class="description">
+                        VAE retrained on 579 mapsets (2-mapper songs), tested on held-out 271 mapsets (3+ mapper songs).
+                        <strong>Key finding:</strong> cosine similarity holds on unseen data (0.804 vs 0.774), confirming learned perceptual structure.
+                    </p>
+                    <div id="cv-preview" class="preview-chart"></div>
+                    <div class="card-stats">
+                        <div class="stat">
+                            <span class="stat-value" id="cv-delta">—</span>
+                            <span class="stat-label">Δ Cosine (test vs original)</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value" id="cv-verdict">—</span>
+                            <span class="stat-label">Verdict</span>
+                        </div>
+                    </div>
+                    <a href="cross_validation.html" class="explore-link">Explore comparison →</a>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Latent Space Cartography • ISMIR 2026 preliminary results</p>
+            <p><a href="https://github.com/recxa/osu-dreamer-cartography" target="_blank">GitHub Repository</a></p>
+        </footer>
+    </div>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

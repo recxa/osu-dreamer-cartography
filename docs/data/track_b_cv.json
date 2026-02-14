@@ -1,0 +1,300 @@
+{
+  "description": "Track B analysis on CV test set (held-out 3+ mapper songs)",
+  "checkpoint": "epoch=3-step=37996.ckpt",
+  "test_songs": 80,
+  "pairs_compared": 235,
+  "full_cosine_mean": 0.8041916489601135,
+  "full_cosine_std": 0.03180941194295883,
+  "dim_summary": {
+    "0": {
+      "pearson_mean": 0.3401040511810161,
+      "pearson_std": 0.1670219081793779,
+      "n_pairs": 235
+    },
+    "1": {
+      "pearson_mean": 0.3083838104720179,
+      "pearson_std": 0.17461972399250092,
+      "n_pairs": 235
+    },
+    "2": {
+      "pearson_mean": 0.2170318057974563,
+      "pearson_std": 0.12427507614820604,
+      "n_pairs": 235
+    },
+    "3": {
+      "pearson_mean": 0.20314300043790826,
+      "pearson_std": 0.1334435614015516,
+      "n_pairs": 235
+    },
+    "4": {
+      "pearson_mean": 0.2909730338313727,
+      "pearson_std": 0.1588416159503295,
+      "n_pairs": 235
+    },
+    "5": {
+      "pearson_mean": 0.1504707014953086,
+      "pearson_std": 0.09899485254835841,
+      "n_pairs": 235
+    },
+    "6": {
+      "pearson_mean": 0.15410223710423482,
+      "pearson_std": 0.10058252224482446,
+      "n_pairs": 235
+    },
+    "7": {
+      "pearson_mean": 0.2058450324166599,
+      "pearson_std": 0.14433426549675787,
+      "n_pairs": 235
+    },
+    "8": {
+      "pearson_mean": 0.2403854765561686,
+      "pearson_std": 0.14405019715974993,
+      "n_pairs": 235
+    },
+    "9": {
+      "pearson_mean": 0.0618907967902332,
+      "pearson_std": 0.07543518782670497,
+      "n_pairs": 235
+    },
+    "10": {
+      "pearson_mean": 0.09336431686892926,
+      "pearson_std": 0.08855735743402972,
+      "n_pairs": 235
+    },
+    "11": {
+      "pearson_mean": 0.20833822029718707,
+      "pearson_std": 0.12392374740966614,
+      "n_pairs": 235
+    },
+    "12": {
+      "pearson_mean": 0.2834839693409181,
+      "pearson_std": 0.19372600867584888,
+      "n_pairs": 235
+    },
+    "13": {
+      "pearson_mean": 0.274375247772319,
+      "pearson_std": 0.1472826164549721,
+      "n_pairs": 235
+    },
+    "14": {
+      "pearson_mean": 0.32230549337468073,
+      "pearson_std": 0.14608885303232366,
+      "n_pairs": 235
+    },
+    "15": {
+      "pearson_mean": 0.19352471317784267,
+      "pearson_std": 0.13578133828623495,
+      "n_pairs": 235
+    },
+    "16": {
+      "pearson_mean": 0.27089648238729164,
+      "pearson_std": 0.14926646435289198,
+      "n_pairs": 235
+    },
+    "17": {
+      "pearson_mean": 0.36044184251991657,
+      "pearson_std": 0.1678576929367052,
+      "n_pairs": 235
+    },
+    "18": {
+      "pearson_mean": 0.22490076170071893,
+      "pearson_std": 0.1141969599739219,
+      "n_pairs": 235
+    },
+    "19": {
+      "pearson_mean": 0.19757884920510946,
+      "pearson_std": 0.12356647088244935,
+      "n_pairs": 235
+    },
+    "20": {
+      "pearson_mean": 0.2889973827843366,
+      "pearson_std": 0.1368733947516908,
+      "n_pairs": 235
+    },
+    "21": {
+      "pearson_mean": 0.35287228975908874,
+      "pearson_std": 0.16083027971904296,
+      "n_pairs": 235
+    },
+    "22": {
+      "pearson_mean": 0.11484016003209035,
+      "pearson_std": 0.08962261191542602,
+      "n_pairs": 235
+    },
+    "23": {
+      "pearson_mean": 0.14741826553508064,
+      "pearson_std": 0.09984991181587619,
+      "n_pairs": 235
+    },
+    "24": {
+      "pearson_mean": 0.12204829713664479,
+      "pearson_std": 0.09395531070819181,
+      "n_pairs": 235
+    },
+    "25": {
+      "pearson_mean": 0.3258984803103711,
+      "pearson_std": 0.1728376432283457,
+      "n_pairs": 235
+    },
+    "26": {
+      "pearson_mean": 0.24660626696405621,
+      "pearson_std": 0.12048498978923798,
+      "n_pairs": 235
+    },
+    "27": {
+      "pearson_mean": 0.1829080766508307,
+      "pearson_std": 0.11673289371424864,
+      "n_pairs": 235
+    },
+    "28": {
+      "pearson_mean": 0.3299168902186889,
+      "pearson_std": 0.14597627913148314,
+      "n_pairs": 235
+    },
+    "29": {
+      "pearson_mean": 0.2719239705820153,
+      "pearson_std": 0.14498858875125262,
+      "n_pairs": 235
+    },
+    "30": {
+      "pearson_mean": 0.1158708473606839,
+      "pearson_std": 0.09350460810325523,
+      "n_pairs": 235
+    },
+    "31": {
+      "pearson_mean": 0.16464252309841018,
+      "pearson_std": 0.1282969472709981,
+      "n_pairs": 235
+    }
+  },
+  "dim_ranking": [
+    {
+      "dim": 17,
+      "pearson_mean": 0.36044184251991657
+    },
+    {
+      "dim": 21,
+      "pearson_mean": 0.35287228975908874
+    },
+    {
+      "dim": 0,
+      "pearson_mean": 0.3401040511810161
+    },
+    {
+      "dim": 28,
+      "pearson_mean": 0.3299168902186889
+    },
+    {
+      "dim": 25,
+      "pearson_mean": 0.3258984803103711
+    },
+    {
+      "dim": 14,
+      "pearson_mean": 0.32230549337468073
+    },
+    {
+      "dim": 1,
+      "pearson_mean": 0.3083838104720179
+    },
+    {
+      "dim": 4,
+      "pearson_mean": 0.2909730338313727
+    },
+    {
+      "dim": 20,
+      "pearson_mean": 0.2889973827843366
+    },
+    {
+      "dim": 12,
+      "pearson_mean": 0.2834839693409181
+    },
+    {
+      "dim": 13,
+      "pearson_mean": 0.274375247772319
+    },
+    {
+      "dim": 29,
+      "pearson_mean": 0.2719239705820153
+    },
+    {
+      "dim": 16,
+      "pearson_mean": 0.27089648238729164
+    },
+    {
+      "dim": 26,
+      "pearson_mean": 0.24660626696405621
+    },
+    {
+      "dim": 8,
+      "pearson_mean": 0.2403854765561686
+    },
+    {
+      "dim": 18,
+      "pearson_mean": 0.22490076170071893
+    },
+    {
+      "dim": 2,
+      "pearson_mean": 0.2170318057974563
+    },
+    {
+      "dim": 11,
+      "pearson_mean": 0.20833822029718707
+    },
+    {
+      "dim": 7,
+      "pearson_mean": 0.2058450324166599
+    },
+    {
+      "dim": 3,
+      "pearson_mean": 0.20314300043790826
+    },
+    {
+      "dim": 19,
+      "pearson_mean": 0.19757884920510946
+    },
+    {
+      "dim": 15,
+      "pearson_mean": 0.19352471317784267
+    },
+    {
+      "dim": 27,
+      "pearson_mean": 0.1829080766508307
+    },
+    {
+      "dim": 31,
+      "pearson_mean": 0.16464252309841018
+    },
+    {
+      "dim": 6,
+      "pearson_mean": 0.15410223710423482
+    },
+    {
+      "dim": 5,
+      "pearson_mean": 0.1504707014953086
+    },
+    {
+      "dim": 23,
+      "pearson_mean": 0.14741826553508064
+    },
+    {
+      "dim": 24,
+      "pearson_mean": 0.12204829713664479
+    },
+    {
+      "dim": 30,
+      "pearson_mean": 0.1158708473606839
+    },
+    {
+      "dim": 22,
+      "pearson_mean": 0.11484016003209035
+    },
+    {
+      "dim": 10,
+      "pearson_mean": 0.09336431686892926
+    },
+    {
+      "dim": 9,
+      "pearson_mean": 0.0618907967902332
+    }
+  ]
+}
