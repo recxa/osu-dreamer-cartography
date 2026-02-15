@@ -1,27 +1,31 @@
 """
-Phase 1.2: Extract .osz archives for multi-mapper subset.
+Step 2: Extract .osz archives for multi-mapper subset.
 
 Reads the multi-mapper index and extracts all needed .osz files
-to data/extracted/{beatmapset_id}/.
+to experiment/output/data/extracted/{beatmapset_id}/.
 
-Output: data/extracted/ with subdirectories per beatmapset
+Usage:
+    uv run python scripts/02_extract_osz.py /path/to/osz/files/
+
+Input:  experiment/output/data/multi_mapper_index.json
+Output: experiment/output/data/extracted/ with subdirectories per beatmapset
 """
 
+import argparse
 import json
 import zipfile
 from pathlib import Path
 
-DATASET_DIR = Path("/Users/red/Downloads/rcx25/LoopMaker/LoopMaker Notebooks/LoopBaker Local/lmp_crate/datasets/Osu2MIR/config/single_timing_point")
-DATA_DIR = Path(__file__).parent.parent / "data"
+REPO_ROOT = Path(__file__).resolve().parent.parent
+DATA_DIR = REPO_ROOT / "experiment" / "output" / "data"
 INDEX_PATH = DATA_DIR / "multi_mapper_index.json"
 EXTRACT_DIR = DATA_DIR / "extracted"
 
 
-def extract():
+def extract(dataset_dir: Path):
     with open(INDEX_PATH) as f:
         index = json.load(f)
 
-    # Collect all needed BeatmapSetIDs
     needed = {}
     for song in index:
         for bs in song["beatmapsets"]:
@@ -40,7 +44,7 @@ def extract():
             skipped += 1
             continue
 
-        osz_path = DATASET_DIR / f"{bsid}.osz"
+        osz_path = dataset_dir / f"{bsid}.osz"
         if not osz_path.exists():
             print(f"  Missing: {bsid}.osz")
             errors += 1
@@ -48,10 +52,9 @@ def extract():
 
         try:
             out_dir.mkdir(parents=True, exist_ok=True)
-            with zipfile.ZipFile(osz_path, 'r') as z:
-                # Extract only .osu files and audio
+            with zipfile.ZipFile(osz_path, "r") as z:
                 for name in z.namelist():
-                    if name.endswith('.osu') or name.endswith('.mp3') or name.endswith('.ogg'):
+                    if name.endswith(".osu") or name.endswith(".mp3") or name.endswith(".ogg"):
                         z.extract(name, out_dir)
             extracted += 1
         except Exception as e:
@@ -66,4 +69,13 @@ def extract():
 
 
 if __name__ == "__main__":
-    extract()
+    parser = argparse.ArgumentParser(description="Extract .osz archives for multi-mapper subset")
+    parser.add_argument("dataset_dir", type=Path, help="Directory containing .osz files")
+    args = parser.parse_args()
+
+    if not args.dataset_dir.is_dir():
+        parser.error(f"Not a directory: {args.dataset_dir}")
+    if not INDEX_PATH.exists():
+        parser.error(f"Run 01_build_index.py first — missing {INDEX_PATH}")
+
+    extract(args.dataset_dir)

@@ -1,30 +1,30 @@
 """
-Phase 4.2: Cross-mapper comparison in VAE latent space.
+Step 7: Cross-mapper comparison in VAE latent space (Track B).
 
 For each song with multiple mappers, compares the 32-dim latent
 trajectories to identify which latent dimensions show high cross-mapper
 agreement (perceptual) vs. high variance (stylistic).
 
-Also performs variance decomposition: for each latent dimension,
-computes between-mapper vs. within-song variance.
+Usage:
+    uv run python scripts/07_track_b_analysis.py
 
-Outputs analysis results and figures to results/track_b/.
-
-Run with osu-dreamer venv:
-  PYTHONPATH=.../osu-dreamer .../osu-dreamer/.venv/bin/python 07_track_b_analysis.py
+Input:  experiment/output/data/latent_manifest.json
+        experiment/output/data/encodings_latent/
+Output: experiment/output/results/track_b/track_b_results.json
+        experiment/output/results/track_b/latent_dim_agreement.png
 """
 
 import json
-import numpy as np
-from pathlib import Path
-from collections import defaultdict
-from itertools import combinations
 import warnings
+import numpy as np
+from collections import defaultdict
+from pathlib import Path
 
-warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore")
 
-DATA_DIR = Path(__file__).parent.parent / "data"
-RESULTS_DIR = Path(__file__).parent.parent / "results" / "track_b"
+REPO_ROOT = Path(__file__).resolve().parent.parent
+DATA_DIR = REPO_ROOT / "experiment" / "output" / "data"
+RESULTS_DIR = REPO_ROOT / "experiment" / "output" / "results" / "track_b"
 LATENT_MANIFEST_PATH = DATA_DIR / "latent_manifest.json"
 ENCODINGS_DIR = DATA_DIR / "encodings_latent"
 
@@ -49,7 +49,6 @@ def analyze():
     with open(LATENT_MANIFEST_PATH) as f:
         manifest = json.load(f)
 
-    # Group by song
     by_song = defaultdict(list)
     for entry in manifest:
         by_song[entry["song_group_idx"]].append(entry)
@@ -57,16 +56,10 @@ def analyze():
     print(f"Song groups with latent encodings: {len(by_song)}")
     print(f"Total latent-encoded beatmaps: {len(manifest)}")
 
-    # === Cross-mapper comparison ===
     cross_mapper_pearson = {d: [] for d in range(N_LATENT)}
     cross_mapper_cosine_per_dim = {d: [] for d in range(N_LATENT)}
-    cross_mapper_full_cosine = []  # Full 32-dim frame cosine
-
-    # === Variance decomposition ===
-    # For each song: collect per-mapper mean latent vectors
-    # Then compute between-mapper variance vs. overall variance
+    cross_mapper_full_cosine = []
     song_between_var = {d: [] for d in range(N_LATENT)}
-    song_within_var = {d: [] for d in range(N_LATENT)}
 
     songs_analyzed = 0
     pairs_compared = 0
@@ -76,22 +69,18 @@ def analyze():
         if len(creators) < 2:
             continue
 
-        # Load latent encodings
         loaded = {}
         for e in entries:
             path = ENCODINGS_DIR / e["filename"]
             if path.exists():
                 loaded[e["filename"]] = {
-                    "data": np.load(path),  # [32, l]
+                    "data": np.load(path),
                     "creator": e["creator"],
-                    "version": e["version"],
-                    "beatmapset_id": e["beatmapset_id"],
                 }
 
         if len(loaded) < 2:
             continue
 
-        # Find minimum latent length for alignment
         min_l = min(v["data"].shape[1] for v in loaded.values())
         if min_l < 2:
             continue
@@ -99,7 +88,6 @@ def analyze():
         items = list(loaded.items())
         songs_analyzed += 1
 
-        # --- Cross-mapper pairwise comparison ---
         for i in range(len(items)):
             for j in range(i + 1, len(items)):
                 fname_a, info_a = items[i]
@@ -108,15 +96,13 @@ def analyze():
                 if info_a["creator"] == info_b["creator"]:
                     continue
 
-                z_a = info_a["data"][:, :min_l]  # [32, l]
+                z_a = info_a["data"][:, :min_l]
                 z_b = info_b["data"][:, :min_l]
 
-                # Per-dimension Pearson correlation (temporal)
                 for d in range(N_LATENT):
                     cross_mapper_pearson[d].append(pearson_corr(z_a[d], z_b[d]))
                     cross_mapper_cosine_per_dim[d].append(cosine_sim(z_a[d], z_b[d]))
 
-                # Full 32-dim frame cosine (sampled)
                 step = max(1, min_l // 100)
                 frame_sims = []
                 for t in range(0, min_l, step):
@@ -125,40 +111,26 @@ def analyze():
 
                 pairs_compared += 1
 
-        # --- Variance decomposition ---
-        # Group by creator within this song
+        # Variance decomposition
         by_creator = defaultdict(list)
         for fname, info in items:
             by_creator[info["creator"]].append(info["data"][:, :min_l])
 
-        # Per-dimension: compute mean per creator, then between-creator variance
         for d in range(N_LATENT):
             creator_means = []
             for creator, arrs in by_creator.items():
-                # Mean of this creator's latent dim d across time
                 creator_mean = np.mean([arr[d].mean() for arr in arrs])
                 creator_means.append(creator_mean)
-
             if len(creator_means) >= 2:
                 song_between_var[d].append(np.var(creator_means))
-
-            # Within-song variance: variance of all mappers' time-averaged values
-            all_vals = []
-            for arr_list in by_creator.values():
-                for arr in arr_list:
-                    all_vals.append(arr[d].mean())
-            if len(all_vals) >= 2:
-                song_within_var[d].append(np.var(all_vals))
 
     print(f"\nSongs analyzed: {songs_analyzed}")
     print(f"Cross-mapper pairs compared: {pairs_compared}")
 
-    # === Aggregate results ===
+    # Aggregate
     print(f"\n{'='*80}")
     print(f"LATENT DIMENSIONS RANKED BY CROSS-MAPPER AGREEMENT (Pearson)")
     print(f"{'='*80}")
-    print(f"{'Dim':<6} {'Pearson (mean±std)':<24} {'Cosine (mean±std)':<24} {'Between-var':<16} {'Label'}")
-    print(f"{'-'*80}")
 
     dim_summary = {}
     for d in range(N_LATENT):
@@ -169,22 +141,15 @@ def analyze():
         if not pearsons:
             continue
 
-        p_mean = float(np.mean(pearsons))
-        p_std = float(np.std(pearsons))
-        c_mean = float(np.mean(cosines))
-        c_std = float(np.std(cosines))
-        bv_mean = float(np.mean(bvar)) if bvar else 0.0
-
         dim_summary[d] = {
-            "pearson_mean": p_mean,
-            "pearson_std": p_std,
-            "cosine_mean": c_mean,
-            "cosine_std": c_std,
-            "between_var_mean": bv_mean,
+            "pearson_mean": float(np.mean(pearsons)),
+            "pearson_std": float(np.std(pearsons)),
+            "cosine_mean": float(np.mean(cosines)),
+            "cosine_std": float(np.std(cosines)),
+            "between_var_mean": float(np.mean(bvar)) if bvar else 0.0,
             "n_pairs": len(pearsons),
         }
 
-    # Sort by Pearson
     ranked = sorted(dim_summary.items(), key=lambda x: -x[1]["pearson_mean"])
     for rank, (d, stats) in enumerate(ranked, 1):
         bar = "█" * int(max(0, stats["pearson_mean"]) * 40)
@@ -194,23 +159,17 @@ def analyze():
             label = "STYLISTIC"
         else:
             label = "MIXED"
+        print(f"z_{d:<4} {stats['pearson_mean']:>6.3f} ± {stats['pearson_std']:.3f}  {bar}  [{label}]")
 
-        print(f"z_{d:<4} {stats['pearson_mean']:>6.3f} ± {stats['pearson_std']:.3f}       "
-              f"{stats['cosine_mean']:>6.3f} ± {stats['cosine_std']:.3f}       "
-              f"{stats['between_var_mean']:>8.4f}     [{label}]")
-
-    # Full cosine
     if cross_mapper_full_cosine:
-        print(f"\nFull 32-dim cosine similarity (cross-mapper): "
+        print(f"\nFull 32-dim cosine similarity: "
               f"{np.mean(cross_mapper_full_cosine):.3f} ± {np.std(cross_mapper_full_cosine):.3f}")
 
-    # Perceptual/stylistic counts
     perceptual = sum(1 for d, s in dim_summary.items() if s["pearson_mean"] > 0.3)
     mixed = sum(1 for d, s in dim_summary.items() if 0.05 <= s["pearson_mean"] <= 0.3)
     stylistic = sum(1 for d, s in dim_summary.items() if s["pearson_mean"] < 0.05)
     print(f"\nDimension taxonomy: {perceptual} perceptual, {mixed} mixed, {stylistic} stylistic")
 
-    # === Save results ===
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     output = {
         "dim_summary": {str(k): v for k, v in dim_summary.items()},
@@ -222,17 +181,16 @@ def analyze():
         "taxonomy": {"perceptual": perceptual, "mixed": mixed, "stylistic": stylistic},
     }
 
-    with open(RESULTS_DIR / "track_b_results.json", 'w') as f:
+    with open(RESULTS_DIR / "track_b_results.json", "w") as f:
         json.dump(output, f, indent=2)
     print(f"\nResults saved to {RESULTS_DIR / 'track_b_results.json'}")
 
-    # === Plots ===
+    # Plots
     try:
         import matplotlib
-        matplotlib.use('Agg')
+        matplotlib.use("Agg")
         import matplotlib.pyplot as plt
 
-        # 1. Pearson by latent dimension (ranked)
         fig, ax = plt.subplots(figsize=(10, 8))
         dims_sorted = [f"z_{d}" for d, _ in ranked]
         pearsons_sorted = [s["pearson_mean"] for _, s in ranked]
@@ -253,52 +211,23 @@ def analyze():
         ax.set_yticklabels(dims_sorted, fontsize=8)
         ax.set_xlabel("Pearson Correlation (cross-mapper)")
         ax.set_title("VAE Latent Dimensions: Cross-Mapper Agreement")
-        ax.axvline(x=0.3, color='blue', linestyle='--', alpha=0.5, label='Perceptual threshold')
-        ax.axvline(x=0.05, color='red', linestyle='--', alpha=0.5, label='Stylistic threshold')
-        ax.axvline(x=0, color='gray', linewidth=0.5)
+        ax.axvline(x=0.3, color="blue", linestyle="--", alpha=0.5, label="Perceptual threshold")
+        ax.axvline(x=0.05, color="red", linestyle="--", alpha=0.5, label="Stylistic threshold")
+        ax.axvline(x=0, color="gray", linewidth=0.5)
         ax.legend(fontsize=8)
         ax.invert_yaxis()
         plt.tight_layout()
-        fig.savefig(RESULTS_DIR / "latent_dim_agreement.png", dpi=150, bbox_inches='tight')
-        fig.savefig(RESULTS_DIR / "latent_dim_agreement.pdf", bbox_inches='tight')
+        fig.savefig(RESULTS_DIR / "latent_dim_agreement.png", dpi=150, bbox_inches="tight")
         plt.close()
-
-        # 2. Variance decomposition
-        fig, ax = plt.subplots(figsize=(10, 5))
-        dim_indices = [d for d, _ in ranked]
-        between_vars = [dim_summary[d]["between_var_mean"] for d in dim_indices]
-        ax.bar(range(len(dim_indices)), between_vars, color=colors, alpha=0.8)
-        ax.set_xticks(range(len(dim_indices)))
-        ax.set_xticklabels([f"z_{d}" for d in dim_indices], fontsize=7, rotation=45)
-        ax.set_ylabel("Between-Mapper Variance")
-        ax.set_title("Latent Dimension Variance Decomposition (ranked by Pearson)")
-        plt.tight_layout()
-        fig.savefig(RESULTS_DIR / "latent_variance_decomposition.png", dpi=150, bbox_inches='tight')
-        fig.savefig(RESULTS_DIR / "latent_variance_decomposition.pdf", bbox_inches='tight')
-        plt.close()
-
-        # 3. Histogram of full 32-dim cosine similarities
-        if cross_mapper_full_cosine:
-            fig, ax = plt.subplots(figsize=(8, 4))
-            ax.hist(cross_mapper_full_cosine, bins=40, color="#2196F3", alpha=0.7, edgecolor='white')
-            ax.axvline(x=np.mean(cross_mapper_full_cosine), color='red', linestyle='--',
-                       label=f'Mean: {np.mean(cross_mapper_full_cosine):.3f}')
-            ax.set_xlabel("32-dim Cosine Similarity")
-            ax.set_ylabel("Count (mapper pairs)")
-            ax.set_title("Cross-Mapper Latent Similarity Distribution")
-            ax.legend()
-            plt.tight_layout()
-            fig.savefig(RESULTS_DIR / "latent_cosine_distribution.png", dpi=150, bbox_inches='tight')
-            fig.savefig(RESULTS_DIR / "latent_cosine_distribution.pdf", bbox_inches='tight')
-            plt.close()
-
-        print(f"Plots saved to {RESULTS_DIR}/")
+        print(f"Plot saved to {RESULTS_DIR}/")
 
     except ImportError:
         print("matplotlib not available — skipping plots")
 
-    return dim_summary
-
 
 if __name__ == "__main__":
+    if not LATENT_MANIFEST_PATH.exists():
+        print(f"Error: Run 06_encode_latent.py first — missing {LATENT_MANIFEST_PATH}")
+        exit(1)
+
     analyze()

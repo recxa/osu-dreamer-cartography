@@ -1,50 +1,46 @@
 """
-Phase 2.2: Cross-mapper comparison on 9-dim beatmap encodings.
+Step 5: Cross-mapper comparison on 9-dim beatmap encodings (Track A).
 
 For each song with multiple mappers, compares the representative
 beatmaps across mappers using per-dimension similarity metrics.
 
-Also computes within-mapper baseline (different difficulties by
-same mapper) for comparison.
+Usage:
+    uv run python scripts/05_track_a_analysis.py
 
-Outputs analysis results and figures to results/track_a/.
-
-Run with osu-dreamer venv:
-  PYTHONPATH=.../osu-dreamer .../osu-dreamer/.venv/bin/python 05_track_a_analysis.py
+Input:  experiment/output/data/encoding_manifest.json
+        experiment/output/data/encodings_9dim/
+Output: experiment/output/results/track_a/track_a_results.json
+        experiment/output/results/track_a/cross_mapper_agreement.png
 """
 
 import json
-import numpy as np
-from pathlib import Path
-from collections import defaultdict
-from itertools import combinations
 import warnings
+import numpy as np
+from collections import defaultdict
+from pathlib import Path
 
-warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore")
 
-DATA_DIR = Path(__file__).parent.parent / "data"
-RESULTS_DIR = Path(__file__).parent.parent / "results" / "track_a"
+REPO_ROOT = Path(__file__).resolve().parent.parent
+DATA_DIR = REPO_ROOT / "experiment" / "output" / "data"
+RESULTS_DIR = REPO_ROOT / "experiment" / "output" / "results" / "track_a"
 MANIFEST_PATH = DATA_DIR / "encoding_manifest.json"
-INDEX_PATH = DATA_DIR / "multi_mapper_index.json"
 ENCODINGS_DIR = DATA_DIR / "encodings_9dim"
 
 DIM_NAMES = ["ONSET", "COMBO", "SLIDE", "SUSTAIN", "WHISTLE", "FINISH", "CLAP", "X", "Y"]
 
 
 def pearson_corr(a, b):
-    """Pearson correlation between two 1D arrays."""
     if len(a) < 2 or np.std(a) == 0 or np.std(b) == 0:
         return 0.0
     return float(np.corrcoef(a, b)[0, 1])
 
 
 def mean_abs_diff(a, b):
-    """Mean absolute difference between two 1D arrays."""
     return float(np.mean(np.abs(a - b)))
 
 
 def cosine_sim(a, b):
-    """Cosine similarity between two 1D arrays."""
     norm_a = np.linalg.norm(a)
     norm_b = np.linalg.norm(b)
     if norm_a == 0 or norm_b == 0:
@@ -55,10 +51,7 @@ def cosine_sim(a, b):
 def analyze():
     with open(MANIFEST_PATH) as f:
         manifest = json.load(f)
-    with open(INDEX_PATH) as f:
-        index = json.load(f)
 
-    # Group manifest entries by song_group_idx
     by_song = defaultdict(list)
     for entry in manifest:
         by_song[entry["song_group_idx"]].append(entry)
@@ -66,20 +59,17 @@ def analyze():
     print(f"Song groups with encodings: {len(by_song)}")
     print(f"Total encoded beatmaps: {len(manifest)}")
 
-    # Cross-mapper comparison: for each song, compare all pairs of different mappers
     cross_mapper_results = {dim: [] for dim in DIM_NAMES}
-    cross_mapper_cosine = []  # Full 9-dim cosine similarity
+    cross_mapper_cosine = []
 
     songs_analyzed = 0
     pairs_compared = 0
 
     for song_idx, entries in sorted(by_song.items()):
-        # Only compare if 2+ different mappers
         creators = set(e["creator"] for e in entries)
         if len(creators) < 2:
             continue
 
-        # Load encodings
         loaded = {}
         for e in entries:
             path = ENCODINGS_DIR / e["filename"]
@@ -87,17 +77,12 @@ def analyze():
                 loaded[e["filename"]] = {
                     "data": np.load(path),
                     "creator": e["creator"],
-                    "version": e["version"],
-                    "beatmapset_id": e["beatmapset_id"],
                 }
 
         if len(loaded) < 2:
             continue
 
-        # Find minimum length for alignment
         min_L = min(v["data"].shape[1] for v in loaded.values())
-
-        # Compare all pairs of different mappers
         items = list(loaded.items())
         songs_analyzed += 1
 
@@ -107,12 +92,11 @@ def analyze():
                 fname_b, info_b = items[j]
 
                 if info_a["creator"] == info_b["creator"]:
-                    continue  # Skip same-mapper pairs
+                    continue
 
                 enc_a = info_a["data"][:, :min_L]
                 enc_b = info_b["data"][:, :min_L]
 
-                # Per-dimension metrics
                 for d, dim_name in enumerate(DIM_NAMES):
                     sig_a = enc_a[d]
                     sig_b = enc_b[d]
@@ -122,9 +106,8 @@ def analyze():
                         "cosine": cosine_sim(sig_a, sig_b),
                     })
 
-                # Full 9-dim cosine similarity (averaged over time)
                 frame_sims = []
-                for t in range(0, min_L, 10):  # Sample every 10th frame for speed
+                for t in range(0, min_L, 10):
                     frame_sims.append(cosine_sim(enc_a[:, t], enc_b[:, t]))
                 cross_mapper_cosine.append(np.mean(frame_sims))
 
@@ -133,7 +116,7 @@ def analyze():
     print(f"\nSongs analyzed: {songs_analyzed}")
     print(f"Cross-mapper pairs compared: {pairs_compared}")
 
-    # Aggregate results
+    # Aggregate
     print(f"\n{'='*70}")
     print(f"CROSS-MAPPER AGREEMENT BY DIMENSION")
     print(f"{'='*70}")
@@ -165,7 +148,7 @@ def analyze():
               f"{np.mean(mads):>6.3f} ± {np.std(mads):.3f}       "
               f"{np.mean(cosines):>6.3f} ± {np.std(cosines):.3f}")
 
-    # Rank dimensions by agreement
+    # Ranked
     print(f"\n{'='*70}")
     print(f"DIMENSIONS RANKED BY CROSS-MAPPER AGREEMENT (Pearson)")
     print(f"{'='*70}")
@@ -175,11 +158,9 @@ def analyze():
         label = "PERCEPTUAL" if stats["pearson_mean"] > 0.3 else "STYLISTIC" if stats["pearson_mean"] < 0.1 else "MIXED"
         print(f"  {rank}. {dim_name:<10} {stats['pearson_mean']:>6.3f}  {bar}  [{label}]")
 
-    # Full 9-dim cosine
     if cross_mapper_cosine:
-        print(f"\nFull 9-dim cosine similarity (cross-mapper): {np.mean(cross_mapper_cosine):.3f} ± {np.std(cross_mapper_cosine):.3f}")
+        print(f"\nFull 9-dim cosine similarity: {np.mean(cross_mapper_cosine):.3f} ± {np.std(cross_mapper_cosine):.3f}")
 
-    # Save results
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     output = {
         "summary": summary,
@@ -189,17 +170,16 @@ def analyze():
         "pairs_compared": pairs_compared,
     }
 
-    with open(RESULTS_DIR / "track_a_results.json", 'w') as f:
+    with open(RESULTS_DIR / "track_a_results.json", "w") as f:
         json.dump(output, f, indent=2)
     print(f"\nResults saved to {RESULTS_DIR / 'track_a_results.json'}")
 
-    # Generate plots if matplotlib available
+    # Plots
     try:
         import matplotlib
-        matplotlib.use('Agg')
+        matplotlib.use("Agg")
         import matplotlib.pyplot as plt
 
-        # Bar chart: Pearson correlation by dimension
         fig, axes = plt.subplots(1, 3, figsize=(18, 5))
 
         dims = [d for d in DIM_NAMES if d in summary]
@@ -210,19 +190,17 @@ def analyze():
         cosines = [summary[d]["cosine_mean"] for d in dims]
         cosine_errs = [summary[d]["cosine_std"] for d in dims]
 
-        # Color by category
         colors = []
         for d in dims:
             if d in ("ONSET", "COMBO"):
-                colors.append("#2196F3")  # Blue = timing
+                colors.append("#2196F3")
             elif d in ("SLIDE", "SUSTAIN"):
-                colors.append("#4CAF50")  # Green = structure
+                colors.append("#4CAF50")
             elif d in ("WHISTLE", "FINISH", "CLAP"):
-                colors.append("#FF9800")  # Orange = hitsounds
+                colors.append("#FF9800")
             else:
-                colors.append("#9C27B0")  # Purple = spatial
+                colors.append("#9C27B0")
 
-        # Sort by pearson for the plot
         order = sorted(range(len(dims)), key=lambda i: -pearsons[i])
         dims_sorted = [dims[i] for i in order]
         pearsons_sorted = [pearsons[i] for i in order]
@@ -235,9 +213,8 @@ def analyze():
         axes[0].set_yticklabels(dims_sorted)
         axes[0].set_xlabel("Pearson Correlation")
         axes[0].set_title("Cross-Mapper Agreement by Dimension")
-        axes[0].axvline(x=0, color='gray', linewidth=0.5)
+        axes[0].axvline(x=0, color="gray", linewidth=0.5)
 
-        # MAD plot
         mads_sorted = [mads[order[i]] for i in range(len(dims))]
         mad_errs_sorted = [mad_errs[order[i]] for i in range(len(dims))]
         axes[1].barh(range(len(dims_sorted)), mads_sorted, xerr=mad_errs_sorted,
@@ -247,7 +224,6 @@ def analyze():
         axes[1].set_xlabel("Mean Absolute Difference")
         axes[1].set_title("Cross-Mapper Divergence by Dimension")
 
-        # Cosine plot
         cosines_sorted = [cosines[order[i]] for i in range(len(dims))]
         cosine_errs_sorted = [cosine_errs[order[i]] for i in range(len(dims))]
         axes[2].barh(range(len(dims_sorted)), cosines_sorted, xerr=cosine_errs_sorted,
@@ -258,32 +234,17 @@ def analyze():
         axes[2].set_title("Cross-Mapper Cosine Similarity by Dimension")
 
         plt.tight_layout()
-        fig.savefig(RESULTS_DIR / "cross_mapper_agreement.png", dpi=150, bbox_inches='tight')
+        fig.savefig(RESULTS_DIR / "cross_mapper_agreement.png", dpi=150, bbox_inches="tight")
         print(f"Plot saved to {RESULTS_DIR / 'cross_mapper_agreement.png'}")
-        plt.close()
-
-        # Legend explanation
-        fig2, ax2 = plt.subplots(figsize=(8, 2))
-        ax2.axis('off')
-        legend_items = [
-            ("Timing (ONSET, COMBO)", "#2196F3"),
-            ("Structure (SLIDE, SUSTAIN)", "#4CAF50"),
-            ("Hitsounds (WHISTLE, FINISH, CLAP)", "#FF9800"),
-            ("Spatial (X, Y)", "#9C27B0"),
-        ]
-        for i, (label, color) in enumerate(legend_items):
-            ax2.barh([i], [1], color=color, alpha=0.8)
-            ax2.text(1.1, i, label, va='center', fontsize=10)
-        ax2.set_xlim(0, 5)
-        ax2.set_title("Dimension Categories")
-        fig2.savefig(RESULTS_DIR / "legend.png", dpi=150, bbox_inches='tight')
         plt.close()
 
     except ImportError:
         print("matplotlib not available — skipping plots")
 
-    return summary
-
 
 if __name__ == "__main__":
+    if not MANIFEST_PATH.exists():
+        print(f"Error: Run 04_encode_9dim.py first — missing {MANIFEST_PATH}")
+        exit(1)
+
     analyze()
