@@ -5,18 +5,8 @@ const Runner = {
   steps: [],
 
   async start(params) {
-    // Switch to running view
-    App.enableNav('running');
-    App.showView('running');
-    App.disableNav('setup');
+    Runner._beginRun();
 
-    // Clear log
-    document.getElementById('log-output').textContent = '';
-
-    // Start SSE listener first
-    Runner.connectSSE();
-
-    // Start pipeline
     try {
       const res = await fetch('/api/run', {
         method: 'POST',
@@ -30,6 +20,32 @@ const Runner = {
     } catch (e) {
       Runner.appendLog(`Failed to start pipeline: ${e.message}\n`);
     }
+  },
+
+  async startPrecomputed(params) {
+    Runner._beginRun();
+
+    try {
+      const res = await fetch('/api/run-precomputed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(params)
+      });
+      const data = await res.json();
+      if (data.error) {
+        Runner.appendLog(`ERROR: ${data.error}\n`);
+      }
+    } catch (e) {
+      Runner.appendLog(`Failed to start pipeline: ${e.message}\n`);
+    }
+  },
+
+  _beginRun() {
+    App.enableNav('running');
+    App.showView('running');
+    App.disableNav('setup');
+    document.getElementById('log-output').textContent = '';
+    Runner.connectSSE();
   },
 
   connectSSE() {
@@ -99,10 +115,10 @@ const Runner = {
   renderSteps() {
     const list = document.getElementById('steps-list');
     list.innerHTML = Runner.steps.map(s => `
-      <div class="step-item" id="step-${s.id}">
-        <span class="step-icon" id="step-icon-${s.id}">○</span>
+      <div class="step-item${s.skip ? ' skip' : ''}" id="step-${s.id}">
+        <span class="step-icon" id="step-icon-${s.id}">${s.skip ? '⊘' : '○'}</span>
         <span class="step-num">${s.id}</span>
-        <span class="step-name">${s.name}</span>
+        <span class="step-name">${s.name}${s.skip ? ' (pre-computed)' : ''}</span>
       </div>
     `).join('');
   },

@@ -23,7 +23,7 @@ from http.server import HTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 
-from gui.pipeline_runner import PipelineRunner
+from gui.pipeline_runner import PipelineRunner, detect_precomputed, download_sample_data
 
 STATIC_DIR = Path(__file__).parent / "static"
 
@@ -59,6 +59,8 @@ class GUIHandler(SimpleHTTPRequestHandler):
             self._handle_results()
         elif path == "/api/status":
             self._handle_status()
+        elif path == "/api/precomputed":
+            self._handle_precomputed()
         else:
             self.send_error(404)
 
@@ -79,6 +81,10 @@ class GUIHandler(SimpleHTTPRequestHandler):
             self._handle_run(body)
         elif path == "/api/cancel":
             self._handle_cancel()
+        elif path == "/api/download-sample":
+            self._handle_download_sample()
+        elif path == "/api/run-precomputed":
+            self._handle_run_precomputed(body)
         else:
             self.send_error(404)
 
@@ -126,6 +132,29 @@ class GUIHandler(SimpleHTTPRequestHandler):
         path = _pick_dialog("file", filetypes=filetypes)
         self._json_response({"path": path})
 
+    # ─── Pre-computed Data ───
+
+    def _handle_precomputed(self):
+        info = detect_precomputed()
+        self._json_response(info)
+
+    def _handle_download_sample(self):
+        cls = type(self)
+
+        def on_progress(stage, message):
+            with cls._lock:
+                for q in cls.sse_queues:
+                    q.put(("download_progress", {"stage": stage, "message": message}))
+
+        def _do_download():
+            success = download_sample_data(progress_callback=on_progress)
+            with cls._lock:
+                for q in cls.sse_queues:
+                    q.put(("download_done", {"success": success}))
+
+        threading.Thread(target=_do_download, daemon=True).start()
+        self._json_response({"status": "downloading"})
+
     # ─── Pipeline Control ───
 
     def _handle_run(self, body: bytes):
@@ -143,6 +172,31 @@ class GUIHandler(SimpleHTTPRequestHandler):
             return
 
         cls.runner = PipelineRunner(dataset_dir, checkpoint or None)
+
+        def on_event(event_type, data):
+            with cls._lock:
+                for q in cls.sse_queues:
+                    q.put((event_type, data))
+
+        cls.runner.add_listener(on_event)
+        cls.runner.run_async()
+
+        self._json_response({"status": "started"})
+
+    def _handle_run_precomputed(self, body: bytes):
+        params = json.loads(body) if body else {}
+        checkpoint = params.get("checkpoint", "")
+
+        cls = type(self)
+        if cls.runner and cls.runner.running:
+            self._json_response({"error": "Pipeline already running"}, 409)
+            return
+
+        cls.runner = PipelineRunner(
+            dataset_dir=None,
+            checkpoint_path=checkpoint or None,
+            use_precomputed=True,
+        )
 
         def on_event(event_type, data):
             with cls._lock:

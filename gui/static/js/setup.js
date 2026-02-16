@@ -3,8 +3,9 @@
 const Setup = {
   datasetDir: '',
   checkpointPath: '',
+  precomputed: null,
 
-  init() {
+  async init() {
     document.getElementById('btn-pick-folder').addEventListener('click', () => Setup.pickFolder());
     document.getElementById('btn-pick-checkpoint').addEventListener('click', () => Setup.pickCheckpoint());
     document.getElementById('btn-run').addEventListener('click', () => Setup.startRun());
@@ -12,6 +13,116 @@ const Setup = {
     document.getElementById('param-threshold').addEventListener('input', (e) => {
       document.getElementById('threshold-display').textContent = parseFloat(e.target.value).toFixed(2);
     });
+
+    // Check for pre-computed data on load
+    await Setup.checkPrecomputed();
+  },
+
+  async checkPrecomputed() {
+    try {
+      const res = await fetch('/api/precomputed');
+      Setup.precomputed = await res.json();
+      Setup.renderSampleCard();
+    } catch (e) {
+      // API not available, hide the card
+      document.getElementById('sample-data-card').classList.add('hidden');
+    }
+  },
+
+  renderSampleCard() {
+    const pc = Setup.precomputed;
+    const el = document.getElementById('sample-status');
+
+    if (pc.can_skip_encoding && pc.can_skip_vae) {
+      // Data is ready — show "run with sample data" button
+      el.innerHTML = `
+        <div class="sample-ready">
+          <p>
+            <strong>Sample data available.</strong>
+            Pre-computed encodings found (${pc.n_9dim} beatmaps, 9-dim + 32-dim latent).
+            Run the analysis pipeline immediately — steps 1-4 and VAE encoding will be skipped.
+          </p>
+          <div>
+            <button class="btn btn-primary" id="btn-run-sample">run with sample data</button>
+          </div>
+        </div>
+      `;
+      document.getElementById('btn-run-sample').addEventListener('click', () => Setup.runPrecomputed());
+    } else if (pc.can_skip_encoding) {
+      el.innerHTML = `
+        <div class="sample-ready">
+          <p>
+            <strong>Partial data available.</strong>
+            ${pc.n_9dim} 9-dim encodings found. Missing latent encodings — VAE step will run.
+          </p>
+          <div>
+            <button class="btn btn-primary" id="btn-run-sample">run with available data</button>
+          </div>
+        </div>
+      `;
+      document.getElementById('btn-run-sample').addEventListener('click', () => Setup.runPrecomputed());
+    } else {
+      // No data — show download button
+      el.innerHTML = `
+        <div class="sample-info">
+          <p>
+            <strong>No beatmap data found.</strong>
+            Download our pre-computed test beatmap encodings (~900 MB) to run the analysis immediately,
+            or use your own .osz files below.
+          </p>
+          <button class="btn btn-outline" id="btn-download-sample">download sample data</button>
+        </div>
+      `;
+      document.getElementById('btn-download-sample').addEventListener('click', () => Setup.downloadSample());
+    }
+  },
+
+  async downloadSample() {
+    const el = document.getElementById('sample-status');
+    el.innerHTML = `
+      <div class="download-progress">
+        <span class="spinner"></span>
+        <span id="download-msg">Starting download...</span>
+      </div>
+    `;
+
+    // Connect SSE for download progress
+    const sse = new EventSource('/api/sse');
+
+    sse.addEventListener('download_progress', (e) => {
+      const data = JSON.parse(e.data);
+      const msg = document.getElementById('download-msg');
+      if (msg) msg.textContent = data.message;
+    });
+
+    sse.addEventListener('download_done', (e) => {
+      const data = JSON.parse(e.data);
+      sse.close();
+      if (data.success) {
+        Setup.checkPrecomputed();
+      } else {
+        el.innerHTML = `
+          <div class="sample-info">
+            <p style="color:var(--danger)"><strong>Download failed.</strong> Check your connection and try again.</p>
+            <button class="btn btn-outline" id="btn-download-sample">retry</button>
+          </div>
+        `;
+        document.getElementById('btn-download-sample').addEventListener('click', () => Setup.downloadSample());
+      }
+    });
+
+    sse.onerror = () => {
+      sse.close();
+    };
+
+    // Trigger download
+    fetch('/api/download-sample', { method: 'POST' });
+  },
+
+  runPrecomputed() {
+    const checkpoint = Setup.checkpointPath;
+
+    Runner.startPrecomputed({ checkpoint });
   },
 
   async pickFolder() {
@@ -60,7 +171,6 @@ const Setup = {
 
   previewDataset(dirPath) {
     const preview = document.getElementById('dataset-preview');
-    // Simple count: just show the path for now (actual counting happens server-side in step 1)
     preview.classList.remove('hidden');
     preview.innerHTML = `
       <span class="preview-stat">path: <strong>${dirPath}</strong></span>
