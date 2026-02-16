@@ -165,11 +165,11 @@ const Charts = {
       });
     });
 
-    // X labels
+    // X labels (anchored so last letter aligns with column center)
     dimNames.forEach((name, i) => {
       svg.append('text').attr('class', 'heatmap-label')
         .attr('x', i * cellSize + cellSize / 2).attr('y', -8)
-        .attr('text-anchor', 'end')
+        .attr('text-anchor', 'start')
         .attr('transform', `rotate(-45, ${i * cellSize + cellSize / 2}, -8)`)
         .text(name);
     });
