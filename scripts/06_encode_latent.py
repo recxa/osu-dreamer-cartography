@@ -40,7 +40,12 @@ def encode_latent():
     model = Model.load_from_checkpoint(str(CHECKPOINT_PATH))
     model.eval()
 
-    device = "mps" if th.backends.mps.is_available() else "cpu"
+    if th.cuda.is_available():
+        device = "cuda"
+    elif th.backends.mps.is_available():
+        device = "mps"
+    else:
+        device = "cpu"
     model = model.to(device)
     print(f"Model on device: {device}")
 
