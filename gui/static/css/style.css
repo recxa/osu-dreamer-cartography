@@ -829,6 +829,214 @@ body {
   margin-top: 20px;
 }
 
+/* ─── Help Tips ─── */
+
+.help-tip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 1px solid var(--border-mid);
+  font-size: 10px;
+  color: var(--text-muted);
+  cursor: help;
+  position: relative;
+  vertical-align: middle;
+  margin-left: 3px;
+  transition: all var(--transition);
+  line-height: 1;
+}
+
+.help-tip:hover {
+  border-color: var(--accent-border);
+  color: var(--accent-dim);
+}
+
+.help-tip .help-content {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 300px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-mid);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--text-dim);
+  z-index: 200;
+  pointer-events: none;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+
+.help-tip .help-content strong { color: var(--text-mid); }
+
+.help-tip .help-content::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: var(--border-mid);
+}
+
+.help-tip:hover .help-content {
+  display: block;
+}
+
+.help-scale {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 8px;
+  margin-top: 6px;
+  font-size: 10px;
+}
+
+.help-scale dt { color: var(--accent); }
+.help-scale dd { color: var(--text-muted); }
+
+/* ─── Dataset Browser ─── */
+
+.dataset-stats {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.ds-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ds-stat-val {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: -0.5px;
+}
+
+.ds-stat-lbl {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dataset-toggle-row {
+  margin-bottom: 12px;
+}
+
+.btn-sm {
+  font-size: 11px;
+  padding: 5px 12px;
+}
+
+.dataset-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.dataset-search {
+  flex: 1;
+  max-width: 340px;
+}
+
+.dataset-count {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.dataset-table-wrap {
+  overflow-x: auto;
+  max-height: 480px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.dataset-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  min-width: 700px;
+}
+
+.dataset-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.dataset-table th {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border-mid);
+  padding: 8px 10px;
+  text-align: left;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition: color 0.15s ease;
+}
+
+.dataset-table th:hover { color: var(--accent); }
+.dataset-table th.num { text-align: right; }
+
+.dataset-table th.sort-asc::after { content: ' ▲'; font-size: 8px; color: var(--accent); }
+.dataset-table th.sort-desc::after { content: ' ▼'; font-size: 8px; color: var(--accent); }
+
+.dataset-table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-mid);
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dataset-table td.num { text-align: right; }
+
+.dataset-table tr:hover td {
+  background: var(--surface-raised);
+  color: var(--text);
+}
+
+.cell-title { color: var(--text); font-weight: 500; }
+.cell-artist { color: var(--text-dim); }
+
+.ds-link {
+  color: var(--accent-dim);
+  text-decoration: none;
+  font-size: 11px;
+}
+
+.ds-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.dataset-more {
+  text-align: center !important;
+  max-width: none !important;
+  color: var(--text-muted) !important;
+  font-style: italic;
+  padding: 12px 10px !important;
+}
+
 /* ─── Tooltip ─── */
 
 .tooltip {

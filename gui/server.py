@@ -61,6 +61,8 @@ class GUIHandler(SimpleHTTPRequestHandler):
             self._handle_status()
         elif path == "/api/precomputed":
             self._handle_precomputed()
+        elif path == "/api/dataset-info":
+            self._handle_dataset_info()
         else:
             self.send_error(404)
 
@@ -137,6 +139,63 @@ class GUIHandler(SimpleHTTPRequestHandler):
     def _handle_precomputed(self):
         info = detect_precomputed()
         self._json_response(info)
+
+    def _handle_dataset_info(self):
+        from gui.pipeline_runner import DATA_DIR
+        registry_path = DATA_DIR / "beatmap_registry.json"
+        index_path = DATA_DIR / "multi_mapper_index.json"
+
+        if not registry_path.exists():
+            self._json_response({"available": False})
+            return
+
+        with open(registry_path) as f:
+            registry = json.load(f)
+
+        songs = {}
+        if index_path.exists():
+            with open(index_path) as f:
+                index = json.load(f)
+            songs = {s["match_key"]: s for s in index}
+
+        # Build table rows from representative beatmaps
+        reps = [r for r in registry if r.get("is_representative")]
+        table = []
+        for r in reps:
+            table.append({
+                "title": r.get("title", ""),
+                "artist": r.get("artist", ""),
+                "creator": r.get("creator", ""),
+                "version": r.get("version", ""),
+                "cs": r.get("cs"),
+                "ar": r.get("ar"),
+                "od": r.get("od"),
+                "hp": r.get("hp"),
+                "beatmapset_id": r.get("beatmapset_id"),
+                "song_group_idx": r.get("song_group_idx"),
+                "num_mappers": r.get("num_mappers_in_group"),
+            })
+
+        # Compute summary stats
+        all_mappers = set(r.get("creator", "") for r in reps)
+        all_songs = set(r.get("song_group_idx") for r in reps if r.get("song_group_idx") is not None)
+        all_artists = set(r.get("artist", "") for r in reps)
+
+        from collections import Counter
+        mapper_dist = Counter(
+            s.get("num_mappers", 0) for s in songs.values()
+        ) if songs else {}
+
+        self._json_response({
+            "available": True,
+            "total_beatmaps": len(registry),
+            "representatives": len(reps),
+            "unique_songs": len(all_songs),
+            "unique_mappers": len(all_mappers),
+            "unique_artists": len(all_artists),
+            "mapper_distribution": dict(sorted(mapper_dist.items())),
+            "table": table,
+        })
 
     def _handle_download_sample(self):
         cls = type(self)

@@ -39,6 +39,43 @@
         </div>
       </div>
 
+      <!-- Dataset Browser Card -->
+      <div class="setup-card hidden" id="dataset-card">
+        <div class="card-bar">
+          <span class="card-tag">data</span>
+          <span class="card-name">dataset overview</span>
+        </div>
+        <div class="card-body">
+          <div class="dataset-stats" id="dataset-stats"></div>
+          <div class="dataset-toggle-row">
+            <button class="btn btn-outline btn-sm" id="btn-browse-dataset">browse full dataset</button>
+          </div>
+          <div class="dataset-browser hidden" id="dataset-browser">
+            <div class="dataset-controls">
+              <input type="text" class="field-input dataset-search" id="dataset-search" placeholder="search songs, artists, mappers...">
+              <div class="dataset-count" id="dataset-count"></div>
+            </div>
+            <div class="dataset-table-wrap">
+              <table class="dataset-table" id="dataset-table">
+                <thead>
+                  <tr>
+                    <th data-sort="title">title</th>
+                    <th data-sort="artist">artist</th>
+                    <th data-sort="creator">mapper</th>
+                    <th data-sort="version">diff</th>
+                    <th data-sort="od" class="num">OD</th>
+                    <th data-sort="ar" class="num">AR</th>
+                    <th data-sort="num_mappers" class="num">mappers</th>
+                    <th class="num">link</th>
+                  </tr>
+                </thead>
+                <tbody id="dataset-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="setup-card">
         <div class="card-bar">
           <span class="card-tag">config</span>
@@ -201,11 +238,12 @@
 
     <footer class="footer">
       <div class="footer-main">osu-dreamer latent space cartography &mdash; gui v0.1</div>
-      <div class="footer-disclaimer">disclaimer: webpage &amp; scripts are built w/ claude code. i've reviewed most of it myself, but count results as preliminary until fully human-verified.</div>
+      <div class="footer-disclaimer">disclaimer: webpage &amp; scripts are built w/ claude code. i've (recxa) reviewed most of it myself, but count results as preliminary until fully human-verified.</div>
     </footer>
   </div>
 
   <script src="/static/js/app.js"></script>
+  <script src="/static/js/dataset.js"></script>
   <script src="/static/js/setup.js"></script>
   <script src="/static/js/runner.js"></script>
   <script src="/static/js/charts.js"></script>

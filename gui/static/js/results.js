@@ -5,6 +5,19 @@ const Results = {
   data: null,
   heatmapState: { ordering: 'ranked', threshold: 0, showValues: false },
 
+  // Help tooltip for Pearson r
+  rHelp() {
+    return `<span class="help-tip">?<span class="help-content">`
+      + `<strong>Pearson r</strong> measures how similarly different mappers encode the same song. `
+      + `An r close to 1 means mappers consistently agree on that dimension; r near 0 means they diverge (stylistic choice, not perceptual).`
+      + `<dl class="help-scale">`
+      + `<dt>r &gt; 0.5</dt><dd>strong agreement — likely perceptual</dd>`
+      + `<dt>r = 0.3–0.5</dt><dd>moderate agreement</dd>`
+      + `<dt>r = 0.1–0.3</dt><dd>weak agreement — mixed</dd>`
+      + `<dt>r &lt; 0.1</dt><dd>near-zero — stylistic / mapper-specific</dd>`
+      + `</dl></span></span>`;
+  },
+
   async load() {
     const loading = document.getElementById('results-loading');
     const content = document.getElementById('results-content');
@@ -56,7 +69,7 @@ const Results = {
     const highAgree = ranked.filter(([_, s]) => s.pearson_mean > 0.3);
     const lowAgree = ranked.filter(([_, s]) => s.pearson_mean < 0.1);
 
-    let desc = `Cross-mapper agreement on 9-dim encoding across ${trackA.songs_analyzed} songs.`;
+    let desc = `Cross-mapper agreement ${Results.rHelp()} on 9-dim encoding across ${trackA.songs_analyzed} songs.`;
     if (topDim) {
       desc += ` <strong>${topDim[0]}</strong> (r=${topDim[1].pearson_mean.toFixed(2)}) shows the highest agreement`;
     }
@@ -87,9 +100,9 @@ const Results = {
     const nMixed = dims.length - nPerceptual - nStylistic;
     const topDim = dims[0];
 
-    let desc = `${dims.length}-dim VAE latent space agreement across ${trackB.songs_analyzed} songs.`;
+    let desc = `${dims.length}-dim VAE latent space agreement ${Results.rHelp()} across ${trackB.songs_analyzed} songs.`;
     if (topDim) {
-      desc += ` <strong>${nPerceptual}/${dims.length} dims</strong> classified as perceptual (r>0.3).`;
+      desc += ` <strong>${nPerceptual}/${dims.length} dims</strong> classified as perceptual (r&gt;0.3).`;
       desc += ` Top dimension z<sub>${topDim.dim}</sub> achieves r=${topDim.pearson_mean.toFixed(3)}.`;
     }
 
@@ -150,7 +163,7 @@ const Results = {
     });
     const topEncoded = Object.entries(topEncodings).sort((a, b) => b[1] - a[1]);
 
-    let desc = `Correlation between ${matrix.length} latent dims and ${dimNames.length} interpretable dims.`;
+    let desc = `Correlation ${Results.rHelp()} between ${matrix.length} latent dims and ${dimNames.length} interpretable dims.`;
     if (maxAbs > 0.01) {
       desc += ` Strongest link: <strong>z_${maxZi}</strong> &harr; <strong>${dimNames[maxDi]}</strong> (r=${maxR.toFixed(3)}).`;
     }
