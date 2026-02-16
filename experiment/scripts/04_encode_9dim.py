@@ -1,5 +1,5 @@
 """
-Step 4: Encode representative beatmaps to 9-dim temporal signals.
+Phase 2.1: Encode representative beatmaps to 9-dim temporal signals.
 
 Uses osu-dreamer's encoding functions (no model needed) to convert
 each .osu beatmap to a [9, L] array of interpretable features:
@@ -8,26 +8,26 @@ each .osu beatmap to a [9, L] array of interpretable features:
 Handles audio alignment within song groups (different .osz archives
 may have slightly different audio file lengths).
 
-Usage:
-    uv run python scripts/04_encode_9dim.py
+Output: data/encodings_9dim/{beatmapset_id}_{version}.npy
+        data/encoding_manifest.json (maps filenames to metadata)
 
-Input:  experiment/output/data/beatmap_registry.json
-Output: experiment/output/data/encodings_9dim/{beatmapset_id}_{version}.npy
-        experiment/output/data/encoding_manifest.json
+Run from osu-dreamer repo directory:
+  uv run python /path/to/04_encode_9dim.py
 """
 
 import json
 import numpy as np
-from collections import defaultdict
+import sys
 from pathlib import Path
+from collections import defaultdict
 
 from osu_dreamer.osu.beatmap import Beatmap
 from osu_dreamer.data.load_audio import load_audio, get_frame_times
 from osu_dreamer.data.beatmap.encode import encode_beatmap
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
-DATA_DIR = REPO_ROOT / "experiment" / "output" / "data"
+DATA_DIR = Path("/Users/red/Downloads/rcx26/OSUxMIR/experiments/latent-cartography/data")
 REGISTRY_PATH = DATA_DIR / "beatmap_registry.json"
+INDEX_PATH = DATA_DIR / "multi_mapper_index.json"
 OUTPUT_DIR = DATA_DIR / "encodings_9dim"
 MANIFEST_PATH = DATA_DIR / "encoding_manifest.json"
 
@@ -41,9 +41,11 @@ def encode_all():
     with open(REGISTRY_PATH) as f:
         registry = json.load(f)
 
+    # Filter to representatives only
     reps = [r for r in registry if r.get("is_representative")]
     print(f"Representative beatmaps to encode: {len(reps)}")
 
+    # Group by song for audio alignment checking
     by_song = defaultdict(list)
     for r in reps:
         by_song[r["song_group_idx"]].append(r)
@@ -55,6 +57,7 @@ def encode_all():
     alignment_issues = 0
 
     for song_idx, song_reps in sorted(by_song.items()):
+        # First pass: load audio for each beatmap to get frame counts
         audio_info = {}
         for r in song_reps:
             audio_path = r.get("audio_path")
@@ -75,6 +78,7 @@ def encode_all():
         if not audio_info:
             continue
 
+        # Check alignment: all should have same frame count for same song
         frame_counts = [info["L"] for info in audio_info.values()]
         if len(set(frame_counts)) > 1:
             alignment_issues += 1
@@ -82,12 +86,14 @@ def encode_all():
             max_L = max(frame_counts)
             diff_pct = (max_L - min_L) / max_L * 100
             print(f"  Alignment issue song {song_idx}: L ranges {min_L}-{max_L} ({diff_pct:.1f}% diff)")
+            # Use minimum frame count (truncate longer ones)
             target_L = min_L
         else:
             target_L = frame_counts[0]
 
         frame_times = get_frame_times(target_L)
 
+        # Second pass: encode beatmaps
         for r in song_reps:
             if r["osu_path"] not in audio_info:
                 continue
@@ -96,12 +102,15 @@ def encode_all():
                 bm = Beatmap(Path(r["osu_path"]))
                 encoded = encode_beatmap(bm, frame_times)  # [9, L]
 
+                # Truncate if needed
                 if encoded.shape[1] > target_L:
                     encoded = encoded[:, :target_L]
                 elif encoded.shape[1] < target_L:
+                    # Pad with zeros if beatmap is shorter
                     pad = target_L - encoded.shape[1]
-                    encoded = np.pad(encoded, ((0, 0), (0, pad)), mode="constant")
+                    encoded = np.pad(encoded, ((0, 0), (0, pad)), mode='constant')
 
+                # Save
                 version_safe = sanitize_version(r["version"] or "unknown")
                 filename = f"{r['beatmapset_id']}_{version_safe}.npy"
                 np.save(OUTPUT_DIR / filename, encoded)
@@ -130,7 +139,8 @@ def encode_all():
                 print(f"  Encode error ({r['beatmapset_id']} {r['version']}): {e}")
                 error_count += 1
 
-    with open(MANIFEST_PATH, "w") as f:
+    # Save manifest
+    with open(MANIFEST_PATH, 'w') as f:
         json.dump(manifest, f, indent=2, ensure_ascii=False)
 
     print(f"\nDone!")
@@ -138,11 +148,8 @@ def encode_all():
     print(f"  Errors: {error_count}")
     print(f"  Audio alignment issues: {alignment_issues}")
     print(f"  Manifest: {MANIFEST_PATH}")
+    print(f"  Encodings: {OUTPUT_DIR}/")
 
 
 if __name__ == "__main__":
-    if not REGISTRY_PATH.exists():
-        print(f"Error: Run 03_build_registry.py first — missing {REGISTRY_PATH}")
-        exit(1)
-
     encode_all()

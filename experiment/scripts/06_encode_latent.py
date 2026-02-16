@@ -1,17 +1,15 @@
 """
-Step 6: Encode representative beatmaps through the trained VAE.
+Phase 4.1: Encode representative beatmaps through the trained VAE.
 
-Takes the 9-dim encodings from Step 4 and passes them through
+Takes the 9-dim encodings from Phase 2.1 and passes them through
 the VAE encoder to get 32-dim latent representations.
 
-Usage:
-    uv run python scripts/06_encode_latent.py
+Input:  data/encodings_9dim/{beatmapset_id}_{version}.npy  — shape [9, L]
+Output: data/encodings_latent/{beatmapset_id}_{version}.npy — shape [32, l]
+        data/latent_manifest.json
 
-Input:  experiment/output/data/encodings_9dim/*.npy
-        experiment/output/data/encoding_manifest.json
-        experiment/checkpoints/epoch=3-step=58000.ckpt
-Output: experiment/output/data/encodings_latent/*.npy
-        experiment/output/data/latent_manifest.json
+Run with osu-dreamer venv:
+  PYTHONPATH=.../osu-dreamer .../osu-dreamer/.venv/bin/python 06_encode_latent.py
 """
 
 import json
@@ -19,31 +17,32 @@ import numpy as np
 import torch as th
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
-DATA_DIR = REPO_ROOT / "experiment" / "output" / "data"
+DATA_DIR = Path("/Users/red/Downloads/rcx26/OSUxMIR/experiments/latent-cartography/data")
 ENCODINGS_9DIM_DIR = DATA_DIR / "encodings_9dim"
 OUTPUT_DIR = DATA_DIR / "encodings_latent"
 MANIFEST_9DIM_PATH = DATA_DIR / "encoding_manifest.json"
 LATENT_MANIFEST_PATH = DATA_DIR / "latent_manifest.json"
-CHECKPOINT_PATH = REPO_ROOT / "experiment" / "checkpoints" / "epoch=3-step=58000.ckpt"
+
+CHECKPOINT_PATH = Path(
+    "/Users/red/Downloads/rcx26/OSUxMIR/experiments/latent-cartography"
+    "/runs/latent/version_2/checkpoints/epoch=3-step=58000.ckpt"
+)
 
 
 def encode_latent():
-    if not CHECKPOINT_PATH.exists():
-        print(f"Error: Checkpoint not found at {CHECKPOINT_PATH}")
-        print(f"If you cloned without Git LFS, run: git lfs pull")
-        exit(1)
-
     from osu_dreamer.latent_model.model import Model
 
+    # Load trained VAE
     print(f"Loading model from {CHECKPOINT_PATH}")
     model = Model.load_from_checkpoint(str(CHECKPOINT_PATH))
     model.eval()
 
+    # Use MPS if available, else CPU
     device = "mps" if th.backends.mps.is_available() else "cpu"
     model = model.to(device)
     print(f"Model on device: {device}")
 
+    # Load 9-dim manifest
     with open(MANIFEST_9DIM_PATH) as f:
         manifest_9dim = json.load(f)
 
@@ -62,12 +61,17 @@ def encode_latent():
             continue
 
         try:
+            # Load 9-dim encoding
             enc_9dim = np.load(src_path)  # [9, L]
+
+            # Convert to tensor and add batch dim
             chart = th.tensor(enc_9dim).float().unsqueeze(0).to(device)  # [1, 9, L]
 
+            # Encode through VAE
             with th.no_grad():
                 z = model.encode(chart)  # [1, 32, l]
 
+            # Save latent encoding
             z_np = z.squeeze(0).cpu().numpy()  # [32, l]
             np.save(OUTPUT_DIR / entry["filename"], z_np)
 
@@ -86,18 +90,16 @@ def encode_latent():
             print(f"  Error ({entry['filename']}): {e}")
             error_count += 1
 
-    with open(LATENT_MANIFEST_PATH, "w") as f:
+    # Save manifest
+    with open(LATENT_MANIFEST_PATH, 'w') as f:
         json.dump(latent_manifest, f, indent=2, ensure_ascii=False)
 
     print(f"\nDone!")
     print(f"  Encoded: {encoded_count}")
     print(f"  Errors: {error_count}")
     print(f"  Latent manifest: {LATENT_MANIFEST_PATH}")
+    print(f"  Latent encodings: {OUTPUT_DIR}/")
 
 
 if __name__ == "__main__":
-    if not MANIFEST_9DIM_PATH.exists():
-        print(f"Error: Run 04_encode_9dim.py first — missing {MANIFEST_9DIM_PATH}")
-        exit(1)
-
     encode_latent()
