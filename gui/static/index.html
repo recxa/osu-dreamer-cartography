@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Latent Space Cartography</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+  <div class="tooltip" id="tooltip"></div>
+
+  <div class="app">
+    <!-- ─── Header ─── -->
+    <header class="header">
+      <div class="header-row">
+        <div>
+          <div class="header-eyebrow">experiment</div>
+          <h1 class="header-title">latent space cartography</h1>
+        </div>
+        <div class="header-nav">
+          <button class="nav-btn active" data-view="setup" id="nav-setup">setup</button>
+          <button class="nav-btn" data-view="running" id="nav-running" disabled>running</button>
+          <button class="nav-btn" data-view="results" id="nav-results" disabled>results</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ═══ SETUP VIEW ═══ -->
+    <section class="view active" id="view-setup">
+      <div class="setup-card">
+        <div class="card-bar">
+          <span class="card-tag">config</span>
+          <span class="card-name">pipeline setup</span>
+        </div>
+        <div class="card-body">
+          <div class="field">
+            <label class="field-label">beatmap folder</label>
+            <div class="field-row">
+              <input type="text" class="field-input" id="dataset-dir" placeholder="/path/to/osz/files/" readonly>
+              <button class="btn btn-outline" id="btn-pick-folder">browse</button>
+            </div>
+            <p class="field-hint">Directory containing .osz beatmap archives</p>
+          </div>
+
+          <div class="field">
+            <label class="field-label">checkpoint</label>
+            <div class="field-row">
+              <input type="text" class="field-input" id="checkpoint-path" placeholder="(uses bundled checkpoint)" readonly>
+              <button class="btn btn-outline" id="btn-pick-checkpoint">browse</button>
+            </div>
+            <p class="field-hint">Pre-trained VAE model (.ckpt). Leave blank to use bundled checkpoint.</p>
+          </div>
+
+          <div class="field-group">
+            <div class="field">
+              <label class="field-label">perceptual threshold</label>
+              <div class="slider-row">
+                <input type="range" id="param-threshold" min="0.1" max="0.5" step="0.05" value="0.3">
+                <span class="slider-val" id="threshold-display">0.30</span>
+              </div>
+              <p class="field-hint">Pearson r above this = "perceptual" dimension</p>
+            </div>
+          </div>
+
+          <div id="dataset-preview" class="dataset-preview hidden"></div>
+
+          <div class="setup-actions">
+            <button class="btn btn-primary" id="btn-run" disabled>run pipeline</button>
+            <span class="setup-status" id="setup-status"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ RUNNING VIEW ═══ -->
+    <section class="view" id="view-running">
+      <div class="running-layout">
+        <div class="steps-panel">
+          <div class="card-bar">
+            <span class="card-tag">progress</span>
+            <span class="card-name">pipeline steps</span>
+          </div>
+          <div class="steps-list" id="steps-list"></div>
+          <div class="running-actions">
+            <button class="btn btn-outline btn-danger" id="btn-cancel">cancel</button>
+          </div>
+        </div>
+        <div class="log-panel">
+          <div class="card-bar">
+            <span class="card-tag">output</span>
+            <span class="card-name">log</span>
+          </div>
+          <pre class="log-output" id="log-output"></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ RESULTS VIEW ═══ -->
+    <section class="view" id="view-results">
+      <div id="results-loading" class="results-loading">
+        <span class="loading-spinner"></span> loading results...
+      </div>
+
+      <div id="results-content" class="hidden">
+        <!-- Track A -->
+        <div class="panels-row">
+          <section class="panel" id="panel-a">
+            <div class="panel-bar">
+              <span class="panel-tag">track a</span>
+              <span class="panel-name">interpretable dimensions</span>
+            </div>
+            <div class="panel-body">
+              <p class="panel-desc" id="desc-a"></p>
+              <div id="chart-a" class="chart-area"></div>
+              <div class="stats-row" id="stats-a"></div>
+            </div>
+          </section>
+
+          <!-- Track B -->
+          <section class="panel" id="panel-b">
+            <div class="panel-bar">
+              <span class="panel-tag">track b</span>
+              <span class="panel-name">latent dimensions</span>
+            </div>
+            <div class="panel-body">
+              <p class="panel-desc" id="desc-b"></p>
+              <div id="chart-b" class="chart-area"></div>
+              <div class="stats-row" id="stats-b"></div>
+            </div>
+          </section>
+        </div>
+
+        <!-- Synthesis Heatmap -->
+        <section class="panel" id="panel-c">
+          <div class="panel-bar">
+            <span class="panel-tag">synthesis</span>
+            <span class="panel-name">32&times;9 correlation matrix</span>
+          </div>
+          <div class="panel-body">
+            <p class="panel-desc" id="desc-c"></p>
+            <div class="heatmap-controls">
+              <div class="ctrl">
+                <label for="hm-ordering">order</label>
+                <select id="hm-ordering">
+                  <option value="ranked">by agreement</option>
+                  <option value="sequential">sequential (0&ndash;31)</option>
+                </select>
+              </div>
+              <div class="ctrl">
+                <label for="hm-threshold">threshold</label>
+                <input type="range" id="hm-threshold" min="0" max="0.5" step="0.01" value="0">
+                <span class="threshold-val" id="hm-threshold-value">|r| &gt; 0.00</span>
+              </div>
+              <div class="ctrl">
+                <label><input type="checkbox" id="hm-show-values"> values</label>
+              </div>
+            </div>
+            <div class="heatmap-layout">
+              <div id="heatmap-container" class="heatmap-scroll"></div>
+              <div class="heatmap-sidebar">
+                <div class="info-box">
+                  <div class="info-box-title">cell detail</div>
+                  <div id="cell-info">
+                    <p style="color:var(--text-muted);font-size:12px;">click a cell to inspect</p>
+                  </div>
+                </div>
+                <div class="info-box">
+                  <div class="info-box-title">matrix stats</div>
+                  <div class="stats-grid" id="matrix-stats"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- No Track B notice -->
+        <div id="no-trackb-notice" class="notice hidden">
+          <strong>Track B / Synthesis unavailable.</strong>
+          VAE checkpoint was not found or latent encoding failed. Only Track A (9-dim) results are shown.
+        </div>
+
+        <!-- Actions -->
+        <div class="results-actions">
+          <button class="btn btn-outline" id="btn-export">export JSON</button>
+          <button class="btn btn-outline" id="btn-new-run">new run</button>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <span>latent space cartography</span>
+      <span>&middot;</span>
+      <span>gui v1.0</span>
+    </footer>
+  </div>
+
+  <script src="/static/js/app.js"></script>
+  <script src="/static/js/setup.js"></script>
+  <script src="/static/js/runner.js"></script>
+  <script src="/static/js/charts.js"></script>
+  <script src="/static/js/results.js"></script>
+</body>
+</html>
