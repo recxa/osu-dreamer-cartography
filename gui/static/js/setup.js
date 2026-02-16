@@ -17,8 +17,8 @@ const Setup = {
     // Check for pre-computed data on load
     await Setup.checkPrecomputed();
 
-    // Load dataset browser if data exists
-    Dataset.load();
+    // Enable the data tab if dataset exists
+    Dataset.check();
   },
 
   async checkPrecomputed() {

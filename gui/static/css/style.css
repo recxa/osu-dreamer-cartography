@@ -424,9 +424,10 @@ body {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  overflow: hidden;
+  overflow: visible;
   display: flex;
   flex-direction: column;
+  min-height: 300px;
 }
 
 .steps-list {
@@ -900,13 +901,17 @@ body {
 .help-scale dt { color: var(--accent); }
 .help-scale dd { color: var(--text-muted); }
 
-/* ─── Dataset Browser ─── */
+/* ─── Data View ─── */
 
-.dataset-stats {
+.data-stats-row {
   display: flex;
-  gap: 24px;
+  gap: 32px;
   flex-wrap: wrap;
-  margin-bottom: 16px;
+  margin-bottom: 24px;
+  padding: 20px 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
 }
 
 .ds-stat {
@@ -916,7 +921,7 @@ body {
 }
 
 .ds-stat-val {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 600;
   color: var(--accent);
   letter-spacing: -0.5px;
@@ -929,14 +934,44 @@ body {
   letter-spacing: 0.5px;
 }
 
-.dataset-toggle-row {
-  margin-bottom: 12px;
+.data-charts-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
 }
 
-.btn-sm {
-  font-size: 11px;
-  padding: 5px 12px;
+.data-chart-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
 }
+
+.data-chart-card .card-body { padding: 12px 16px; }
+
+.data-chart {
+  min-height: 140px;
+}
+
+.data-chart svg text {
+  fill: var(--text-muted);
+  font-family: var(--font);
+}
+
+.data-chart svg .tick text {
+  fill: var(--text-muted);
+  font-size: 10px;
+}
+
+.data-table-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.data-table-section .card-body { padding: 16px; }
 
 .dataset-controls {
   display: flex;
@@ -1093,4 +1128,5 @@ body {
   .header-row { flex-direction: column; gap: 12px; }
   .header-nav { align-self: flex-start; }
   .field-group { grid-template-columns: 1fr; }
+  .data-charts-row { grid-template-columns: 1fr; }
 }

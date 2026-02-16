@@ -1,31 +1,60 @@
-// ═══ Dataset Browser ═══
+// ═══ Dataset Browser (Data Tab) ═══
 
 const Dataset = {
   data: null,
   sortCol: 'title',
   sortAsc: true,
   filter: '',
+  loaded: false,
 
   async load() {
+    if (Dataset.loaded) return;
+
+    const loading = document.getElementById('data-loading');
+    const content = document.getElementById('data-content');
+    loading.classList.remove('hidden');
+
     try {
       const res = await fetch('/api/dataset-info');
       const info = await res.json();
-      if (!info.available) return;
+      if (!info.available) {
+        loading.innerHTML = '<span style="color:var(--text-muted)">No dataset found. Download sample data or run the pipeline first.</span>';
+        return;
+      }
 
       Dataset.data = info;
-      document.getElementById('dataset-card').classList.remove('hidden');
+      Dataset.loaded = true;
+      App.enableNav('data');
+
+      loading.classList.add('hidden');
+      content.classList.remove('hidden');
+
       Dataset.renderStats();
+      Dataset.renderCharts();
+      Dataset.renderTable();
       Dataset.initControls();
     } catch (e) {
-      // Silently fail — dataset card stays hidden
+      loading.innerHTML = `<span style="color:var(--danger)">Failed to load dataset: ${e.message}</span>`;
+    }
+  },
+
+  // Try to enable the data tab on page load (without switching to it)
+  async check() {
+    try {
+      const res = await fetch('/api/dataset-info');
+      const info = await res.json();
+      if (info.available) {
+        Dataset.data = info;
+        App.enableNav('data');
+      }
+    } catch (e) {
+      // silently fail
     }
   },
 
   renderStats() {
     const d = Dataset.data;
-    const el = document.getElementById('dataset-stats');
-
-    el.innerHTML = `
+    document.getElementById('dataset-stats').innerHTML = `
       <div class="ds-stat"><span class="ds-stat-val">${d.unique_songs}</span><span class="ds-stat-lbl">songs</span></div>
       <div class="ds-stat"><span class="ds-stat-val">${d.unique_mappers}</span><span class="ds-stat-lbl">mappers</span></div>
       <div class="ds-stat"><span class="ds-stat-val">${d.unique_artists}</span><span class="ds-stat-lbl">artists</span></div>
@@ -34,22 +63,161 @@ const Dataset = {
     `;
   },
 
-  initControls() {
-    document.getElementById('btn-browse-dataset').addEventListener('click', () => {
-      const browser = document.getElementById('dataset-browser');
-      const btn = document.getElementById('btn-browse-dataset');
-      const isHidden = browser.classList.contains('hidden');
-      browser.classList.toggle('hidden');
-      btn.textContent = isHidden ? 'hide dataset' : 'browse full dataset';
-      if (isHidden) Dataset.renderTable();
+  // ─── D3 Charts ───
+
+  renderCharts() {
+    Dataset.chartMapperDist();
+    Dataset.chartODDist();
+    Dataset.chartArtistDist();
+  },
+
+  chartMapperDist() {
+    const dist = Dataset.data.mapper_distribution;
+    const entries = Object.entries(dist).map(([k, v]) => ({ label: k + ' mappers', count: v }));
+
+    const container = d3.select('#chart-mapper-dist');
+    container.selectAll('*').remove();
+
+    const cw = container.node().getBoundingClientRect().width || 300;
+    const margin = { top: 8, right: 12, bottom: 30, left: 44 };
+    const w = cw - margin.left - margin.right;
+    const h = 140 - margin.top - margin.bottom;
+
+    const svg = container.append('svg')
+      .attr('width', cw).attr('height', 140)
+      .append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+    const x = d3.scaleBand().domain(entries.map(d => d.label)).range([0, w]).padding(0.3);
+    const y = d3.scaleLinear().domain([0, d3.max(entries, d => d.count)]).nice().range([h, 0]);
+
+    svg.append('g').call(d3.axisLeft(y).ticks(4).tickSize(-w))
+      .call(g => g.select('.domain').remove())
+      .call(g => g.selectAll('.tick line').attr('stroke', '#1a1c20'));
+
+    svg.selectAll('rect').data(entries).join('rect')
+      .attr('x', d => x(d.label)).attr('y', d => y(d.count))
+      .attr('width', x.bandwidth()).attr('height', d => h - y(d.count))
+      .attr('fill', '#8ab4d4').attr('rx', 2);
+
+    // Value labels on bars
+    svg.selectAll('.bar-label').data(entries).join('text')
+      .attr('class', 'bar-label')
+      .attr('x', d => x(d.label) + x.bandwidth() / 2)
+      .attr('y', d => y(d.count) - 4)
+      .attr('text-anchor', 'middle')
+      .style('font-size', '10px').style('fill', 'var(--text-mid)')
+      .text(d => d.count);
+
+    svg.append('g').attr('transform', `translate(0,${h})`)
+      .call(d3.axisBottom(x).tickSize(0))
+      .call(g => g.select('.domain').remove())
+      .selectAll('text').style('font-size', '9px');
+  },
+
+  chartODDist() {
+    const table = Dataset.data.table;
+    const odVals = table.map(r => r.od).filter(v => v != null);
+
+    // Bin into 0.5 increments
+    const bins = d3.bin().domain([0, 10.5]).thresholds(d3.range(0, 10.5, 0.5))(odVals);
+
+    const container = d3.select('#chart-od-dist');
+    container.selectAll('*').remove();
+
+    const cw = container.node().getBoundingClientRect().width || 300;
+    const margin = { top: 8, right: 12, bottom: 30, left: 44 };
+    const w = cw - margin.left - margin.right;
+    const h = 140 - margin.top - margin.bottom;
+
+    const svg = container.append('svg')
+      .attr('width', cw).attr('height', 140)
+      .append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+    const x = d3.scaleLinear().domain([0, 10.5]).range([0, w]);
+    const y = d3.scaleLinear().domain([0, d3.max(bins, d => d.length)]).nice().range([h, 0]);
+
+    svg.append('g').call(d3.axisLeft(y).ticks(4).tickSize(-w))
+      .call(g => g.select('.domain').remove())
+      .call(g => g.selectAll('.tick line').attr('stroke', '#1a1c20'));
+
+    svg.selectAll('rect').data(bins).join('rect')
+      .attr('x', d => x(d.x0) + 1).attr('y', d => y(d.length))
+      .attr('width', d => Math.max(0, x(d.x1) - x(d.x0) - 2))
+      .attr('height', d => h - y(d.length))
+      .attr('fill', d => d.x0 >= 8 ? '#8ab4d4' : '#1a2530').attr('rx', 1);
+
+    svg.append('g').attr('transform', `translate(0,${h})`)
+      .call(d3.axisBottom(x).ticks(6).tickFormat(d => d.toFixed(0)))
+      .call(g => g.select('.domain').remove());
+
+    svg.append('text')
+      .attr('x', w / 2).attr('y', h + 24)
+      .attr('text-anchor', 'middle')
+      .style('font-size', '9px').style('fill', 'var(--text-muted)')
+      .text('Overall Difficulty');
+  },
+
+  chartArtistDist() {
+    const table = Dataset.data.table;
+    const counts = {};
+    // Count unique songs per artist (by song_group_idx)
+    const seen = new Set();
+    table.forEach(r => {
+      const key = r.artist + '|' + r.song_group_idx;
+      if (!seen.has(key)) {
+        seen.add(key);
+        counts[r.artist] = (counts[r.artist] || 0) + 1;
+      }
     });
 
+    const top = Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 15)
+      .map(([artist, count]) => ({ artist, count }));
+
+    const container = d3.select('#chart-artist-dist');
+    container.selectAll('*').remove();
+
+    const cw = container.node().getBoundingClientRect().width || 300;
+    const margin = { top: 8, right: 40, bottom: 8, left: 8 };
+    const rowH = 20;
+    const h = top.length * rowH + margin.top + margin.bottom;
+    const w = cw - margin.left - margin.right;
+
+    const svg = container.append('svg')
+      .attr('width', cw).attr('height', h)
+      .append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+    const x = d3.scaleLinear().domain([0, d3.max(top, d => d.count)]).range([0, w - 50]);
+
+    top.forEach((d, i) => {
+      const y = i * rowH;
+
+      svg.append('rect')
+        .attr('x', 0).attr('y', y + 2)
+        .attr('width', x(d.count)).attr('height', rowH - 4)
+        .attr('fill', '#1a2530').attr('rx', 2);
+
+      svg.append('text')
+        .attr('x', 4).attr('y', y + rowH / 2 + 3)
+        .style('font-size', '10px').style('fill', 'var(--text-mid)')
+        .text(d.artist.length > 28 ? d.artist.slice(0, 26) + '...' : d.artist);
+
+      svg.append('text')
+        .attr('x', x(d.count) + 6).attr('y', y + rowH / 2 + 3)
+        .style('font-size', '10px').style('fill', 'var(--accent)')
+        .text(d.count);
+    });
+  },
+
+  // ─── Controls ───
+
+  initControls() {
     document.getElementById('dataset-search').addEventListener('input', (e) => {
       Dataset.filter = e.target.value.toLowerCase();
       Dataset.renderTable();
     });
 
-    // Column sorting
     document.querySelectorAll('#dataset-table th[data-sort]').forEach(th => {
       th.addEventListener('click', () => {
         const col = th.dataset.sort;
@@ -59,7 +227,6 @@ const Dataset = {
           Dataset.sortCol = col;
           Dataset.sortAsc = true;
         }
-        // Update sort indicators
         document.querySelectorAll('#dataset-table th').forEach(h => h.classList.remove('sort-asc', 'sort-desc'));
         th.classList.add(Dataset.sortAsc ? 'sort-asc' : 'sort-desc');
         Dataset.renderTable();
@@ -67,10 +234,11 @@ const Dataset = {
     });
   },
 
+  // ─── Table ───
+
   renderTable() {
     let rows = Dataset.data.table;
 
-    // Filter
     if (Dataset.filter) {
       const q = Dataset.filter;
       rows = rows.filter(r =>
@@ -81,7 +249,6 @@ const Dataset = {
       );
     }
 
-    // Sort
     const col = Dataset.sortCol;
     rows = [...rows].sort((a, b) => {
       let va = a[col], vb = b[col];
@@ -95,11 +262,9 @@ const Dataset = {
       return Dataset.sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
     });
 
-    // Count
     document.getElementById('dataset-count').textContent =
       `${rows.length} of ${Dataset.data.table.length} beatmaps`;
 
-    // Render (virtualized: cap at 200 rows for performance, rest via scroll hint)
     const maxRows = 200;
     const tbody = document.getElementById('dataset-tbody');
     const fragment = document.createDocumentFragment();

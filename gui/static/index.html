@@ -20,6 +20,7 @@
         </div>
         <div class="header-nav">
           <button class="nav-btn active" data-view="setup" id="nav-setup">setup</button>
+          <button class="nav-btn" data-view="data" id="nav-data" disabled>data</button>
           <button class="nav-btn" data-view="running" id="nav-running" disabled>running</button>
           <button class="nav-btn" data-view="results" id="nav-results" disabled>results</button>
         </div>
@@ -36,43 +37,6 @@
         </div>
         <div class="card-body">
           <div id="sample-status"></div>
-        </div>
-      </div>
-
-      <!-- Dataset Browser Card -->
-      <div class="setup-card hidden" id="dataset-card">
-        <div class="card-bar">
-          <span class="card-tag">data</span>
-          <span class="card-name">dataset overview</span>
-        </div>
-        <div class="card-body">
-          <div class="dataset-stats" id="dataset-stats"></div>
-          <div class="dataset-toggle-row">
-            <button class="btn btn-outline btn-sm" id="btn-browse-dataset">browse full dataset</button>
-          </div>
-          <div class="dataset-browser hidden" id="dataset-browser">
-            <div class="dataset-controls">
-              <input type="text" class="field-input dataset-search" id="dataset-search" placeholder="search songs, artists, mappers...">
-              <div class="dataset-count" id="dataset-count"></div>
-            </div>
-            <div class="dataset-table-wrap">
-              <table class="dataset-table" id="dataset-table">
-                <thead>
-                  <tr>
-                    <th data-sort="title">title</th>
-                    <th data-sort="artist">artist</th>
-                    <th data-sort="creator">mapper</th>
-                    <th data-sort="version">diff</th>
-                    <th data-sort="od" class="num">OD</th>
-                    <th data-sort="ar" class="num">AR</th>
-                    <th data-sort="num_mappers" class="num">mappers</th>
-                    <th class="num">link</th>
-                  </tr>
-                </thead>
-                <tbody id="dataset-tbody"></tbody>
-              </table>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -116,6 +80,80 @@
           <div class="setup-actions">
             <button class="btn btn-primary" id="btn-run" disabled>run pipeline</button>
             <span class="setup-status" id="setup-status"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ DATA VIEW ═══ -->
+    <section class="view" id="view-data">
+      <div id="data-loading" class="results-loading hidden">
+        <span class="loading-spinner"></span> loading dataset...
+      </div>
+
+      <div id="data-content" class="hidden">
+        <!-- Summary Stats -->
+        <div class="data-stats-row" id="dataset-stats"></div>
+
+        <!-- Charts Row -->
+        <div class="data-charts-row">
+          <div class="data-chart-card">
+            <div class="card-bar">
+              <span class="card-tag">distribution</span>
+              <span class="card-name">mappers per song</span>
+            </div>
+            <div class="card-body">
+              <div id="chart-mapper-dist" class="data-chart"></div>
+            </div>
+          </div>
+          <div class="data-chart-card">
+            <div class="card-bar">
+              <span class="card-tag">distribution</span>
+              <span class="card-name">difficulty (OD)</span>
+            </div>
+            <div class="card-body">
+              <div id="chart-od-dist" class="data-chart"></div>
+            </div>
+          </div>
+          <div class="data-chart-card">
+            <div class="card-bar">
+              <span class="card-tag">top 15</span>
+              <span class="card-name">most-mapped artists</span>
+            </div>
+            <div class="card-body">
+              <div id="chart-artist-dist" class="data-chart"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Full Dataset Table -->
+        <div class="data-table-section">
+          <div class="card-bar">
+            <span class="card-tag">browse</span>
+            <span class="card-name">full dataset</span>
+          </div>
+          <div class="card-body">
+            <div class="dataset-controls">
+              <input type="text" class="field-input dataset-search" id="dataset-search" placeholder="search songs, artists, mappers...">
+              <div class="dataset-count" id="dataset-count"></div>
+            </div>
+            <div class="dataset-table-wrap">
+              <table class="dataset-table" id="dataset-table">
+                <thead>
+                  <tr>
+                    <th data-sort="title">title</th>
+                    <th data-sort="artist">artist</th>
+                    <th data-sort="creator">mapper</th>
+                    <th data-sort="version">diff</th>
+                    <th data-sort="od" class="num">OD</th>
+                    <th data-sort="ar" class="num">AR</th>
+                    <th data-sort="num_mappers" class="num">mappers</th>
+                    <th class="num">link</th>
+                  </tr>
+                </thead>
+                <tbody id="dataset-tbody"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
