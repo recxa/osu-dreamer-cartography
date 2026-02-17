@@ -22,6 +22,7 @@ experiment/output/
 # Jupyter
 .ipynb_checkpoints/
 *.ipynb
+!pipeline_walkthrough.ipynb
 
 # OS
 .DS_Store
