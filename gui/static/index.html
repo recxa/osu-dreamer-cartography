@@ -92,12 +92,18 @@
       </div>
 
       <div id="data-content" class="hidden">
-        <!-- Summary Stats + Run Button -->
-        <div class="data-stats-bar">
-          <div class="data-stats-row" id="dataset-stats"></div>
-          <div class="data-stats-action">
-            <span class="data-action-hint" id="data-mode-hint"></span>
-            <button class="btn btn-primary" id="btn-data-confirm">run analysis</button>
+        <!-- Summary Stats + Run Button (matches sample-card structure) -->
+        <div class="data-stats-card">
+          <div class="card-bar">
+            <span class="card-tag">summary</span>
+            <span class="card-name">dataset overview</span>
+          </div>
+          <div class="card-body data-stats-body">
+            <div class="data-stats-row" id="dataset-stats"></div>
+            <div class="data-stats-action">
+              <span class="data-action-hint" id="data-mode-hint"></span>
+              <button class="btn btn-primary" id="btn-data-confirm">run analysis</button>
+            </div>
           </div>
         </div>
 
@@ -201,6 +207,7 @@
             <div class="panel-bar">
               <span class="panel-tag">track a</span>
               <span class="panel-name">interpretable dimensions</span>
+              <span class="panel-help" id="help-a">?</span>
             </div>
             <div class="panel-body">
               <p class="panel-desc" id="desc-a"></p>
@@ -214,6 +221,7 @@
             <div class="panel-bar">
               <span class="panel-tag">track b</span>
               <span class="panel-name">latent dimensions</span>
+              <span class="panel-help" id="help-b">?</span>
             </div>
             <div class="panel-body">
               <p class="panel-desc" id="desc-b"></p>
@@ -228,6 +236,7 @@
           <div class="panel-bar">
             <span class="panel-tag">synthesis</span>
             <span class="panel-name">32&times;9 correlation matrix</span>
+            <span class="panel-help" id="help-c">?</span>
           </div>
           <div class="panel-body">
             <p class="panel-desc" id="desc-c"></p>

@@ -78,9 +78,13 @@ const Dataset = {
   // ─── D3 Charts ───
 
   renderCharts() {
-    Dataset.chartMapperDist();
-    Dataset.chartODDist();
+    // Render artist chart first — it's the tallest and drives grid row height.
+    // Then render the other two after layout so they can read their container's actual height.
     Dataset.chartArtistDist();
+    requestAnimationFrame(() => {
+      Dataset.chartMapperDist();
+      Dataset.chartODDist();
+    });
   },
 
   chartMapperDist() {
@@ -90,13 +94,15 @@ const Dataset = {
     const container = d3.select('#chart-mapper-dist');
     container.selectAll('*').remove();
 
-    const cw = container.node().getBoundingClientRect().width || 300;
+    const rect = container.node().getBoundingClientRect();
+    const cw = rect.width || 300;
+    const ch = Math.max(rect.height, 140);
     const margin = { top: 8, right: 12, bottom: 30, left: 44 };
     const w = cw - margin.left - margin.right;
-    const h = 140 - margin.top - margin.bottom;
+    const h = ch - margin.top - margin.bottom;
 
     const svg = container.append('svg')
-      .attr('width', cw).attr('height', 140)
+      .attr('width', cw).attr('height', ch)
       .append('g').attr('transform', `translate(${margin.left},${margin.top})`);
 
     const x = d3.scaleBand().domain(entries.map(d => d.label)).range([0, w]).padding(0.3);
@@ -134,13 +140,15 @@ const Dataset = {
     const container = d3.select('#chart-od-dist');
     container.selectAll('*').remove();
 
-    const cw = container.node().getBoundingClientRect().width || 300;
+    const rect = container.node().getBoundingClientRect();
+    const cw = rect.width || 300;
+    const ch = Math.max(rect.height, 140);
     const margin = { top: 8, right: 12, bottom: 30, left: 44 };
     const w = cw - margin.left - margin.right;
-    const h = 140 - margin.top - margin.bottom;
+    const h = ch - margin.top - margin.bottom;
 
     const svg = container.append('svg')
-      .attr('width', cw).attr('height', 140)
+      .attr('width', cw).attr('height', ch)
       .append('g').attr('transform', `translate(${margin.left},${margin.top})`);
 
     const x = d3.scaleLinear().domain([0, 10.5]).range([0, w]);

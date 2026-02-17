@@ -5,17 +5,44 @@ const Results = {
   data: null,
   heatmapState: { ordering: 'ranked', threshold: 0, showValues: false },
 
-  // Help tooltip for Pearson r
-  rHelp() {
-    return `<span class="help-tip">?<span class="help-content">`
-      + `<strong>Pearson r</strong> measures how similarly different mappers encode the same song. `
-      + `An r close to 1 means mappers consistently agree on that dimension; r near 0 means they diverge (stylistic choice, not perceptual).`
-      + `<dl class="help-scale">`
-      + `<dt>r &gt; 0.5</dt><dd>strong agreement — likely perceptual</dd>`
-      + `<dt>r = 0.3–0.5</dt><dd>moderate agreement</dd>`
-      + `<dt>r = 0.1–0.3</dt><dd>weak agreement — mixed</dd>`
-      + `<dt>r &lt; 0.1</dt><dd>near-zero — stylistic / mapper-specific</dd>`
-      + `</dl></span></span>`;
+  // Builds a help popup with correlation scale + track-specific takeaway
+  buildHelp(targetId, findings) {
+    const el = document.getElementById(targetId);
+    if (!el) return;
+
+    const scaleRows = [
+      { range: '> 0.5', label: 'strong — perceptual', color: '#8ab4d4' },
+      { range: '0.3 – 0.5', label: 'moderate', color: '#4a7a9a' },
+      { range: '0.1 – 0.3', label: 'weak — mixed', color: '#2a4a5a' },
+      { range: '< 0.1', label: 'none — stylistic', color: '#1a2530' },
+    ];
+
+    let html = '<div class="help-popup">';
+    html += '<div class="help-heading">correlation scale</div>';
+    html += '<div class="help-scale-bar">';
+    scaleRows.forEach(s => {
+      html += `<div class="help-scale-row">`
+        + `<span class="help-scale-fill" style="background:${s.color}"></span>`
+        + `<span class="help-scale-range">${s.range}</span>`
+        + `<span class="help-scale-label">${s.label}</span>`
+        + `</div>`;
+    });
+    html += '</div>';
+
+    html += '<div class="help-heading">this track</div>';
+    html += '<div class="help-finding">';
+    findings.forEach(f => { html += f + '<br>'; });
+    html += '</div>';
+
+    html += '</div>';
+    el.innerHTML = '?' + html;
+  },
+
+  rLevel(r) {
+    if (r > 0.5) return 'strong';
+    if (r > 0.3) return 'moderate';
+    if (r > 0.1) return 'weak';
+    return 'none';
   },
 
   async load() {
@@ -59,7 +86,6 @@ const Results = {
 
   // ─── Track A ───
   renderTrackA(trackA) {
-    // Generate dynamic description
     const summary = trackA.summary;
     const ranked = Object.entries(summary)
       .sort((a, b) => b[1].pearson_mean - a[1].pearson_mean);
@@ -69,7 +95,7 @@ const Results = {
     const highAgree = ranked.filter(([_, s]) => s.pearson_mean > 0.3);
     const lowAgree = ranked.filter(([_, s]) => s.pearson_mean < 0.1);
 
-    let desc = `Cross-mapper agreement ${Results.rHelp()} on 9-dim encoding across ${trackA.songs_analyzed} songs.`;
+    let desc = `Cross-mapper agreement on 9-dim encoding across ${trackA.songs_analyzed} songs.`;
     if (topDim) {
       desc += ` <strong>${topDim[0]}</strong> (r=${topDim[1].pearson_mean.toFixed(2)}) shows the highest agreement`;
     }
@@ -84,6 +110,19 @@ const Results = {
 
     document.getElementById('desc-a').innerHTML = desc;
 
+    // Build panel-bar help tooltip
+    const findings = [];
+    if (topDim) {
+      const r = topDim[1].pearson_mean;
+      findings.push(`Highest: <strong>${topDim[0]}</strong> (r=${r.toFixed(2)}) — ${Results.rLevel(r)}`);
+    }
+    if (bottomDim && bottomDim[0] !== topDim[0]) {
+      const r = bottomDim[1].pearson_mean;
+      findings.push(`Lowest: <strong>${bottomDim[0]}</strong> (r=${r.toFixed(2)}) — ${Results.rLevel(r)}`);
+    }
+    findings.push(`<strong>${highAgree.length}</strong> of ${ranked.length} dims are perceptual (r&gt;0.3)`);
+    Results.buildHelp('help-a', findings);
+
     Charts.renderTrackA('#chart-a', trackA);
     Charts.addStats('#stats-a', [
       { v: trackA.songs_analyzed, l: 'songs' },
@@ -97,10 +136,9 @@ const Results = {
     const dims = trackB.dim_ranking;
     const nPerceptual = dims.filter(d => d.pearson_mean > 0.3).length;
     const nStylistic = dims.filter(d => d.pearson_mean < 0.05).length;
-    const nMixed = dims.length - nPerceptual - nStylistic;
     const topDim = dims[0];
 
-    let desc = `${dims.length}-dim VAE latent space agreement ${Results.rHelp()} across ${trackB.songs_analyzed} songs.`;
+    let desc = `${dims.length}-dim VAE latent space agreement across ${trackB.songs_analyzed} songs.`;
     if (topDim) {
       desc += ` <strong>${nPerceptual}/${dims.length} dims</strong> classified as perceptual (r&gt;0.3).`;
       desc += ` Top dimension z<sub>${topDim.dim}</sub> achieves r=${topDim.pearson_mean.toFixed(3)}.`;
@@ -111,6 +149,18 @@ const Results = {
     }
 
     document.getElementById('desc-b').innerHTML = desc;
+
+    // Build panel-bar help tooltip
+    const findings = [];
+    if (topDim) {
+      findings.push(`Highest: <strong>z_${topDim.dim}</strong> (r=${topDim.pearson_mean.toFixed(3)}) — ${Results.rLevel(topDim.pearson_mean)}`);
+    }
+    const bottomDim = dims[dims.length - 1];
+    if (bottomDim && bottomDim !== topDim) {
+      findings.push(`Lowest: <strong>z_${bottomDim.dim}</strong> (r=${bottomDim.pearson_mean.toFixed(3)}) — ${Results.rLevel(bottomDim.pearson_mean)}`);
+    }
+    findings.push(`<strong>${nPerceptual}</strong> of ${dims.length} dims are perceptual (r&gt;0.3)`);
+    Results.buildHelp('help-b', findings);
 
     Charts.renderTrackB('#chart-b', trackB);
     Charts.addStats('#stats-b', [
@@ -163,7 +213,7 @@ const Results = {
     });
     const topEncoded = Object.entries(topEncodings).sort((a, b) => b[1] - a[1]);
 
-    let desc = `Correlation ${Results.rHelp()} between ${matrix.length} latent dims and ${dimNames.length} interpretable dims.`;
+    let desc = `Correlation between ${matrix.length} latent dims and ${dimNames.length} interpretable dims.`;
     if (maxAbs > 0.01) {
       desc += ` Strongest link: <strong>z_${maxZi}</strong> &harr; <strong>${dimNames[maxDi]}</strong> (r=${maxR.toFixed(3)}).`;
     }
@@ -176,6 +226,17 @@ const Results = {
     }
 
     document.getElementById('desc-c').innerHTML = desc;
+
+    // Build panel-bar help tooltip
+    const synthFindings = [];
+    if (maxAbs > 0.01) {
+      synthFindings.push(`Strongest link: <strong>z_${maxZi}</strong> ↔ <strong>${dimNames[maxDi]}</strong> (r=${maxR.toFixed(3)}) — ${Results.rLevel(Math.abs(maxR))}`);
+    }
+    synthFindings.push(`Mean |r| across matrix: <strong>${meanAbs.toFixed(3)}</strong> — ${Results.rLevel(meanAbs)}`);
+    if (topEncoded.length > 0) {
+      synthFindings.push(`Perceptual dims mostly encode <strong>${topEncoded[0][0]}</strong>`);
+    }
+    Results.buildHelp('help-c', synthFindings);
 
     // Render heatmap
     Charts.renderHeatmap('#heatmap-container', Results._heatmapData, Results.heatmapState);

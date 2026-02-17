@@ -587,6 +587,100 @@ body {
   color: #555;
 }
 
+.panel-help {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid var(--border-mid);
+  font-size: 10px;
+  color: var(--text-muted);
+  cursor: pointer;
+  position: relative;
+  transition: all var(--transition);
+}
+
+.panel-help:hover {
+  border-color: var(--accent-border);
+  color: var(--accent-dim);
+}
+
+.panel-help .help-popup {
+  display: none;
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 300px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-mid);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--text-dim);
+  z-index: 200;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+
+.panel-help .help-popup::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  right: 6px;
+  border: 6px solid transparent;
+  border-bottom-color: var(--border-mid);
+}
+
+.panel-help:hover .help-popup {
+  display: block;
+}
+
+.help-popup .help-heading {
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.help-popup .help-heading:not(:first-child) {
+  margin-top: 12px;
+}
+
+.help-scale-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.help-scale-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+}
+
+.help-scale-fill {
+  width: 40px;
+  height: 6px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.help-scale-label { color: var(--text-muted); }
+.help-scale-range { color: var(--text-dim); min-width: 52px; }
+
+.help-finding {
+  font-size: 11px;
+  color: var(--text-mid);
+  margin-top: 2px;
+}
+
+.help-finding strong { color: var(--accent); }
+
 .panel-body { padding: 18px 20px 20px; }
 
 .panel-desc {
@@ -830,88 +924,23 @@ body {
   margin-top: 20px;
 }
 
-/* ─── Help Tips ─── */
-
-.help-tip {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 15px;
-  height: 15px;
-  border-radius: 50%;
-  border: 1px solid var(--border-mid);
-  font-size: 10px;
-  color: var(--text-muted);
-  cursor: help;
-  position: relative;
-  vertical-align: middle;
-  margin-left: 3px;
-  transition: all var(--transition);
-  line-height: 1;
-}
-
-.help-tip:hover {
-  border-color: var(--accent-border);
-  color: var(--accent-dim);
-}
-
-.help-tip .help-content {
-  display: none;
-  position: absolute;
-  bottom: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%);
-  width: 300px;
-  background: var(--surface-raised);
-  border: 1px solid var(--border-mid);
-  border-radius: var(--radius);
-  padding: 12px 14px;
-  font-size: 11px;
-  line-height: 1.6;
-  color: var(--text-dim);
-  z-index: 200;
-  pointer-events: none;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
-}
-
-.help-tip .help-content strong { color: var(--text-mid); }
-
-.help-tip .help-content::after {
-  content: '';
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  border: 6px solid transparent;
-  border-top-color: var(--border-mid);
-}
-
-.help-tip:hover .help-content {
-  display: block;
-}
-
-.help-scale {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 2px 8px;
-  margin-top: 6px;
-  font-size: 10px;
-}
-
-.help-scale dt { color: var(--accent); }
-.help-scale dd { color: var(--text-muted); }
+/* (help tooltips moved to .panel-help in the panel-bar) */
 
 /* ─── Data View ─── */
 
-.data-stats-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 24px;
-  padding: 20px 24px;
+.data-stats-card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.data-stats-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
 }
 
 .data-stats-row {
@@ -959,12 +988,19 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
-.data-chart-card .card-body { padding: 12px 16px; }
+.data-chart-card .card-body {
+  padding: 12px 16px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
 
 .data-chart {
-  min-height: 140px;
+  flex: 1;
 }
 
 .data-chart svg text {
