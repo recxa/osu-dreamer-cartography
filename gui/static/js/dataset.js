@@ -89,7 +89,7 @@ const Dataset = {
 
   chartMapperDist() {
     const dist = Dataset.data.mapper_distribution;
-    const entries = Object.entries(dist).map(([k, v]) => ({ label: k + ' mappers', count: v }));
+    const entries = Object.entries(dist).map(([k, v]) => ({ label: k, count: v }));
 
     const container = d3.select('#chart-mapper-dist');
     container.selectAll('*').remove();
@@ -97,7 +97,7 @@ const Dataset = {
     const rect = container.node().getBoundingClientRect();
     const cw = rect.width || 300;
     const ch = Math.max(rect.height, 140);
-    const margin = { top: 8, right: 12, bottom: 30, left: 44 };
+    const margin = { top: 8, right: 8, bottom: 36, left: 8 };
     const w = cw - margin.left - margin.right;
     const h = ch - margin.top - margin.bottom;
 
@@ -107,10 +107,6 @@ const Dataset = {
 
     const x = d3.scaleBand().domain(entries.map(d => d.label)).range([0, w]).padding(0.3);
     const y = d3.scaleLinear().domain([0, d3.max(entries, d => d.count)]).nice().range([h, 0]);
-
-    svg.append('g').call(d3.axisLeft(y).ticks(4).tickSize(-w))
-      .call(g => g.select('.domain').remove())
-      .call(g => g.selectAll('.tick line').attr('stroke', '#1a1c20'));
 
     svg.selectAll('rect').data(entries).join('rect')
       .attr('x', d => x(d.label)).attr('y', d => y(d.count))
@@ -125,10 +121,18 @@ const Dataset = {
       .style('font-size', '10px').style('fill', 'var(--text-mid)')
       .text(d => d.count);
 
+    // x-axis: just the numbers
     svg.append('g').attr('transform', `translate(0,${h})`)
       .call(d3.axisBottom(x).tickSize(0))
       .call(g => g.select('.domain').remove())
-      .selectAll('text').style('font-size', '9px');
+      .selectAll('text').style('font-size', '10px');
+
+    // "mappers" label centered below
+    svg.append('text')
+      .attr('x', w / 2).attr('y', h + 30)
+      .attr('text-anchor', 'middle')
+      .style('font-size', '9px').style('fill', 'var(--text-muted)')
+      .text('mappers per song');
   },
 
   chartODDist() {
@@ -143,7 +147,7 @@ const Dataset = {
     const rect = container.node().getBoundingClientRect();
     const cw = rect.width || 300;
     const ch = Math.max(rect.height, 140);
-    const margin = { top: 8, right: 12, bottom: 30, left: 44 };
+    const margin = { top: 8, right: 8, bottom: 36, left: 8 };
     const w = cw - margin.left - margin.right;
     const h = ch - margin.top - margin.bottom;
 
@@ -154,25 +158,24 @@ const Dataset = {
     const x = d3.scaleLinear().domain([0, 10.5]).range([0, w]);
     const y = d3.scaleLinear().domain([0, d3.max(bins, d => d.length)]).nice().range([h, 0]);
 
-    svg.append('g').call(d3.axisLeft(y).ticks(4).tickSize(-w))
-      .call(g => g.select('.domain').remove())
-      .call(g => g.selectAll('.tick line').attr('stroke', '#1a1c20'));
-
     svg.selectAll('rect').data(bins).join('rect')
       .attr('x', d => x(d.x0) + 1).attr('y', d => y(d.length))
       .attr('width', d => Math.max(0, x(d.x1) - x(d.x0) - 2))
       .attr('height', d => h - y(d.length))
       .attr('fill', d => d.x0 >= 8 ? '#8ab4d4' : '#1a2530').attr('rx', 1);
 
+    // x-axis: OD values
     svg.append('g').attr('transform', `translate(0,${h})`)
-      .call(d3.axisBottom(x).ticks(6).tickFormat(d => d.toFixed(0)))
-      .call(g => g.select('.domain').remove());
+      .call(d3.axisBottom(x).ticks(6).tickFormat(d => d.toFixed(0)).tickSize(0))
+      .call(g => g.select('.domain').remove())
+      .selectAll('text').style('font-size', '10px');
 
+    // label centered below
     svg.append('text')
-      .attr('x', w / 2).attr('y', h + 24)
+      .attr('x', w / 2).attr('y', h + 30)
       .attr('text-anchor', 'middle')
       .style('font-size', '9px').style('fill', 'var(--text-muted)')
-      .text('Overall Difficulty');
+      .text('overall difficulty');
   },
 
   chartArtistDist() {
