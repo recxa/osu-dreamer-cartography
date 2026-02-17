@@ -253,9 +253,6 @@ const Dataset = {
       }
     });
 
-    document.getElementById('btn-data-back').addEventListener('click', () => {
-      App.showView('setup');
-    });
   },
 
   // ─── Table ───

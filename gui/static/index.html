@@ -20,7 +20,7 @@
         </div>
         <div class="header-nav">
           <button class="nav-btn active" data-view="setup" id="nav-setup">1. setup</button>
-          <button class="nav-btn" data-view="data" id="nav-data" disabled>2. data</button>
+          <button class="nav-btn" data-view="data" id="nav-data" disabled>2. dataset</button>
           <button class="nav-btn" data-view="running" id="nav-running" disabled>3. running</button>
           <button class="nav-btn" data-view="results" id="nav-results" disabled>4. results</button>
         </div>
@@ -78,7 +78,7 @@
           <div id="dataset-preview" class="dataset-preview hidden"></div>
 
           <div class="setup-actions">
-            <button class="btn btn-primary" id="btn-run" disabled>run pipeline</button>
+            <button class="btn btn-primary" id="btn-run" disabled>proceed</button>
             <span class="setup-status" id="setup-status"></span>
           </div>
         </div>
@@ -92,8 +92,14 @@
       </div>
 
       <div id="data-content" class="hidden">
-        <!-- Summary Stats -->
-        <div class="data-stats-row" id="dataset-stats"></div>
+        <!-- Summary Stats + Run Button -->
+        <div class="data-stats-bar">
+          <div class="data-stats-row" id="dataset-stats"></div>
+          <div class="data-stats-action">
+            <span class="data-action-hint" id="data-mode-hint"></span>
+            <button class="btn btn-primary" id="btn-data-confirm">run analysis</button>
+          </div>
+        </div>
 
         <!-- Charts Row -->
         <div class="data-charts-row">
@@ -124,13 +130,6 @@
               <div id="chart-artist-dist" class="data-chart"></div>
             </div>
           </div>
-        </div>
-
-        <!-- Confirm Actions (top) -->
-        <div class="data-actions">
-          <button class="btn btn-primary" id="btn-data-confirm">run analysis</button>
-          <button class="btn btn-outline" id="btn-data-back">back to setup</button>
-          <span class="data-action-hint" id="data-mode-hint"></span>
         </div>
 
         <!-- Full Dataset Table -->

@@ -903,15 +903,28 @@ body {
 
 /* ─── Data View ─── */
 
-.data-stats-row {
+.data-stats-bar {
   display: flex;
-  gap: 32px;
-  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 24px;
   padding: 20px 24px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
+}
+
+.data-stats-row {
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+
+.data-stats-action {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
 }
 
 .ds-stat {
@@ -964,21 +977,9 @@ body {
   font-size: 10px;
 }
 
-.data-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 24px;
-  padding: 16px 20px;
-  background: var(--surface);
-  border: 1px solid var(--accent-border);
-  border-radius: var(--radius);
-}
-
 .data-action-hint {
   font-size: 11px;
   color: var(--text-dim);
-  margin-left: 8px;
 }
 
 .data-table-section {

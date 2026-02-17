@@ -35,16 +35,16 @@ const Setup = {
     const el = document.getElementById('sample-status');
 
     if (pc.can_skip_encoding && pc.can_skip_vae) {
-      // Data is ready — show "run with sample data" button
+      // Data is ready — show "proceed with sample data" button
       el.innerHTML = `
         <div class="sample-ready">
           <p>
             <strong>Sample data available.</strong>
             Pre-computed encodings found (${pc.n_9dim} beatmaps, 9-dim + 32-dim latent).
-            Run the analysis pipeline immediately — steps 1-4 and VAE encoding will be skipped.
+            Steps 1-4 and VAE encoding will be skipped.
           </p>
           <div>
-            <button class="btn btn-primary" id="btn-run-sample">run with sample data</button>
+            <button class="btn btn-primary" id="btn-run-sample">proceed with sample data</button>
           </div>
         </div>
       `;
@@ -57,7 +57,7 @@ const Setup = {
             ${pc.n_9dim} 9-dim encodings found. Missing latent encodings — VAE step will run.
           </p>
           <div>
-            <button class="btn btn-primary" id="btn-run-sample">run with available data</button>
+            <button class="btn btn-primary" id="btn-run-sample">proceed with available data</button>
           </div>
         </div>
       `;
