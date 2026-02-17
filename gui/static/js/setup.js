@@ -17,8 +17,6 @@ const Setup = {
     // Check for pre-computed data on load
     await Setup.checkPrecomputed();
 
-    // Enable the data tab if dataset exists
-    Dataset.check();
   },
 
   async checkPrecomputed() {
@@ -123,9 +121,9 @@ const Setup = {
   },
 
   runPrecomputed() {
-    const checkpoint = Setup.checkpointPath;
-
-    Runner.startPrecomputed({ checkpoint });
+    // Go to data tab first for review, then user confirms to run
+    Dataset.pendingRun = { mode: 'precomputed', checkpoint: Setup.checkpointPath };
+    Dataset.proceedToData();
   },
 
   async pickFolder() {
@@ -188,11 +186,14 @@ const Setup = {
   startRun() {
     if (!Setup.datasetDir) return;
 
-    Runner.start({
+    // Go to data tab first for review, then user confirms to run
+    Dataset.pendingRun = {
+      mode: 'full',
       dataset_dir: Setup.datasetDir,
       checkpoint: Setup.checkpointPath,
       threshold: parseFloat(document.getElementById('param-threshold').value)
-    });
+    };
+    Dataset.proceedToData();
   }
 };
 

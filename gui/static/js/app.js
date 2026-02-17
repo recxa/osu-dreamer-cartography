@@ -20,11 +20,6 @@ const App = {
 
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     document.querySelector(`.nav-btn[data-view="${name}"]`).classList.add('active');
-
-    // Lazy-load data tab content on first visit
-    if (name === 'data' && typeof Dataset !== 'undefined') {
-      Dataset.load();
-    }
   },
 
   enableNav(name) {

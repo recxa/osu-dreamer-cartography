@@ -964,6 +964,23 @@ body {
   font-size: 10px;
 }
 
+.data-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding: 16px 20px;
+  background: var(--surface);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius);
+}
+
+.data-action-hint {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-left: 8px;
+}
+
 .data-table-section {
   background: var(--surface);
   border: 1px solid var(--border);

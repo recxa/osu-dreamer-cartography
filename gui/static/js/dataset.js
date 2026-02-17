@@ -6,9 +6,20 @@ const Dataset = {
   sortAsc: true,
   filter: '',
   loaded: false,
+  pendingRun: null, // Set by setup.js before navigating here
+
+  // Called by setup.js after user picks a run mode
+  proceedToData() {
+    App.enableNav('data');
+    App.showView('data');
+    Dataset.load();
+  },
 
   async load() {
-    if (Dataset.loaded) return;
+    if (Dataset.loaded) {
+      Dataset.updateHint();
+      return;
+    }
 
     const loading = document.getElementById('data-loading');
     const content = document.getElementById('data-content');
@@ -24,7 +35,6 @@ const Dataset = {
 
       Dataset.data = info;
       Dataset.loaded = true;
-      App.enableNav('data');
 
       loading.classList.add('hidden');
       content.classList.remove('hidden');
@@ -33,22 +43,24 @@ const Dataset = {
       Dataset.renderCharts();
       Dataset.renderTable();
       Dataset.initControls();
+      Dataset.updateHint();
     } catch (e) {
       loading.innerHTML = `<span style="color:var(--danger)">Failed to load dataset: ${e.message}</span>`;
     }
   },
 
-  // Try to enable the data tab on page load (without switching to it)
-  async check() {
-    try {
-      const res = await fetch('/api/dataset-info');
-      const info = await res.json();
-      if (info.available) {
-        Dataset.data = info;
-        App.enableNav('data');
-      }
-    } catch (e) {
-      // silently fail
+  updateHint() {
+    const hint = document.getElementById('data-mode-hint');
+    if (!hint) return;
+    const run = Dataset.pendingRun;
+    if (!run) {
+      hint.textContent = '';
+      return;
+    }
+    if (run.mode === 'precomputed') {
+      hint.textContent = 'using pre-computed encodings — steps 1-4 will be skipped';
+    } else {
+      hint.textContent = `using ${run.dataset_dir}`;
     }
   },
 
@@ -99,7 +111,6 @@ const Dataset = {
       .attr('width', x.bandwidth()).attr('height', d => h - y(d.count))
       .attr('fill', '#8ab4d4').attr('rx', 2);
 
-    // Value labels on bars
     svg.selectAll('.bar-label').data(entries).join('text')
       .attr('class', 'bar-label')
       .attr('x', d => x(d.label) + x.bandwidth() / 2)
@@ -118,7 +129,6 @@ const Dataset = {
     const table = Dataset.data.table;
     const odVals = table.map(r => r.od).filter(v => v != null);
 
-    // Bin into 0.5 increments
     const bins = d3.bin().domain([0, 10.5]).thresholds(d3.range(0, 10.5, 0.5))(odVals);
 
     const container = d3.select('#chart-od-dist');
@@ -160,7 +170,6 @@ const Dataset = {
   chartArtistDist() {
     const table = Dataset.data.table;
     const counts = {};
-    // Count unique songs per artist (by song_group_idx)
     const seen = new Set();
     table.forEach(r => {
       const key = r.artist + '|' + r.song_group_idx;
@@ -231,6 +240,21 @@ const Dataset = {
         th.classList.add(Dataset.sortAsc ? 'sort-asc' : 'sort-desc');
         Dataset.renderTable();
       });
+    });
+
+    // Confirm / Back buttons
+    document.getElementById('btn-data-confirm').addEventListener('click', () => {
+      const run = Dataset.pendingRun;
+      if (!run) return;
+      if (run.mode === 'precomputed') {
+        Runner.startPrecomputed({ checkpoint: run.checkpoint });
+      } else {
+        Runner.start(run);
+      }
+    });
+
+    document.getElementById('btn-data-back').addEventListener('click', () => {
+      App.showView('setup');
     });
   },
 

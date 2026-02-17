@@ -19,10 +19,10 @@
           <h1 class="header-title">osu-dreamer VAE explorer (v0.1)</h1>
         </div>
         <div class="header-nav">
-          <button class="nav-btn active" data-view="setup" id="nav-setup">setup</button>
-          <button class="nav-btn" data-view="data" id="nav-data" disabled>data</button>
-          <button class="nav-btn" data-view="running" id="nav-running" disabled>running</button>
-          <button class="nav-btn" data-view="results" id="nav-results" disabled>results</button>
+          <button class="nav-btn active" data-view="setup" id="nav-setup">1. setup</button>
+          <button class="nav-btn" data-view="data" id="nav-data" disabled>2. data</button>
+          <button class="nav-btn" data-view="running" id="nav-running" disabled>3. running</button>
+          <button class="nav-btn" data-view="results" id="nav-results" disabled>4. results</button>
         </div>
       </div>
     </header>
@@ -124,6 +124,13 @@
               <div id="chart-artist-dist" class="data-chart"></div>
             </div>
           </div>
+        </div>
+
+        <!-- Confirm Actions (top) -->
+        <div class="data-actions">
+          <button class="btn btn-primary" id="btn-data-confirm">run analysis</button>
+          <button class="btn btn-outline" id="btn-data-back">back to setup</button>
+          <span class="data-action-hint" id="data-mode-hint"></span>
         </div>
 
         <!-- Full Dataset Table -->
