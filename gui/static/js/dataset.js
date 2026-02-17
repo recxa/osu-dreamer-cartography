@@ -97,7 +97,7 @@ const Dataset = {
     const rect = container.node().getBoundingClientRect();
     const cw = rect.width || 300;
     const ch = Math.max(rect.height, 140);
-    const margin = { top: 8, right: 8, bottom: 36, left: 8 };
+    const margin = { top: 8, right: 8, bottom: 40, left: 8 };
     const w = cw - margin.left - margin.right;
     const h = ch - margin.top - margin.bottom;
 
@@ -125,11 +125,11 @@ const Dataset = {
     svg.append('g').attr('transform', `translate(0,${h})`)
       .call(d3.axisBottom(x).tickSize(0))
       .call(g => g.select('.domain').remove())
-      .selectAll('text').style('font-size', '10px');
+      .selectAll('text').style('font-size', '10px').attr('dy', '1.3em');
 
     // "mappers" label centered below
     svg.append('text')
-      .attr('x', w / 2).attr('y', h + 30)
+      .attr('x', w / 2).attr('y', h + 34)
       .attr('text-anchor', 'middle')
       .style('font-size', '9px').style('fill', 'var(--text-muted)')
       .text('mappers per song');
@@ -147,7 +147,7 @@ const Dataset = {
     const rect = container.node().getBoundingClientRect();
     const cw = rect.width || 300;
     const ch = Math.max(rect.height, 140);
-    const margin = { top: 8, right: 8, bottom: 36, left: 8 };
+    const margin = { top: 8, right: 8, bottom: 40, left: 8 };
     const w = cw - margin.left - margin.right;
     const h = ch - margin.top - margin.bottom;
 
@@ -155,7 +155,8 @@ const Dataset = {
       .attr('width', cw).attr('height', ch)
       .append('g').attr('transform', `translate(${margin.left},${margin.top})`);
 
-    const x = d3.scaleLinear().domain([0, 10.5]).range([0, w]);
+    const pad = w * 0.06;
+    const x = d3.scaleLinear().domain([0, 10.5]).range([pad, w - pad]);
     const y = d3.scaleLinear().domain([0, d3.max(bins, d => d.length)]).nice().range([h, 0]);
 
     svg.selectAll('rect').data(bins).join('rect')
@@ -168,11 +169,11 @@ const Dataset = {
     svg.append('g').attr('transform', `translate(0,${h})`)
       .call(d3.axisBottom(x).ticks(6).tickFormat(d => d.toFixed(0)).tickSize(0))
       .call(g => g.select('.domain').remove())
-      .selectAll('text').style('font-size', '10px');
+      .selectAll('text').style('font-size', '10px').attr('dy', '1.3em');
 
     // label centered below
     svg.append('text')
-      .attr('x', w / 2).attr('y', h + 30)
+      .attr('x', w / 2).attr('y', h + 34)
       .attr('text-anchor', 'middle')
       .style('font-size', '9px').style('fill', 'var(--text-muted)')
       .text('overall difficulty');
